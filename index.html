@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carte interactive Demeco</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f5f6fa;
+      margin: 0;
+      padding: 0;
+    }
+    h1 { color: #002a6f; margin-top: 40px; }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px;
+    }
+    iframe {
+      width: 100%;
+      height: 90vh;
+      border: none;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔒 Accès sécurisé — Carte interactive Demeco</h1>
+  <p>Veuillez entrer le mot de passe pour accéder à la carte :</p>
+  <input type="password" id="pwd" placeholder="Mot de passe" />
+  <button onclick="checkPwd()">Entrer</button>
+  
+  <!-- 👉 Ici tu mettras ton URL Streamlit (Render, HF, etc.) -->
+  <iframe id="app" src="https://ton-app.streamlit.app"></iframe>
+
+  <script>
+    function checkPwd(){
+      const p = document.getElementById("pwd").value;
+      if(p === "demo123"){ // ton mot de passe ici
+        document.querySelector("iframe").style.display = "block";
+        document.querySelector("h1").style.display = "none";
+        document.querySelector("p").style.display = "none";
+        document.getElementById("pwd").style.display = "none";
+        document.querySelector("button").style.display = "none";
+      } else {
+        alert("Mot de passe incorrect !");
+      }
+    }
+  </script>
+</body>
+</html>
+
