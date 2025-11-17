@@ -16,17 +16,17 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background: linear-gradient(135deg, #002a6f, #0057b7);
+      background: #111; /* fond noir */
       color: #fff;
     }
 
     .login-container {
       text-align: center;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
       padding: 40px 50px;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(8px);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
       max-width: 400px;
       width: 90%;
       animation: fadeIn 1s ease;
@@ -34,16 +34,18 @@
 
     .login-container img {
       width: 160px;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
 
     h1 {
       font-size: 22px;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     p {
-      color: #e3e3e3;
+      color: #ddd;
       font-size: 15px;
       margin-bottom: 25px;
     }
@@ -51,16 +53,18 @@
     input {
       padding: 10px 12px;
       border-radius: 6px;
-      border: none;
+      border: 1px solid #555;
       width: 100%;
       font-size: 16px;
       text-align: center;
       margin-bottom: 15px;
       outline: none;
+      background: #fff;
+      color: #111;
     }
 
     button {
-      background: #e30613;
+      background: #e30613; /* rouge Demeco */
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -69,11 +73,13 @@
       font-weight: bold;
       cursor: pointer;
       transition: background 0.3s ease, transform 0.2s ease;
+      width: 100%;
+      letter-spacing: 0.5px;
     }
 
     button:hover {
-      background: #b80410;
-      transform: scale(1.05);
+      background: #b50410;
+      transform: scale(1.04);
     }
 
     iframe {
@@ -84,9 +90,17 @@
     }
 
     .error {
-      color: #ffaaaa;
+      color: #ff6b6b;
       font-size: 14px;
       margin-top: 10px;
+      min-height: 20px;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 15px;
+      font-size: 13px;
+      color: #aaa;
     }
 
     @keyframes fadeIn {
@@ -100,7 +114,7 @@
   <div id="login" class="login-container">
     <img src="./Logo_Demeco_Transparent.png" alt="Logo Demeco">
     <h1>Accès sécurisé</h1>
-    <p>Espace réservé aux collaborateurs Demeco</p>
+    <p>Espace réservé au réseau Demeco</p>
     <input type="password" id="pwd" placeholder="Entrez le mot de passe" />
     <button onclick="checkPwd()">Accéder à la carte</button>
     <div id="errorMsg" class="error"></div>
@@ -108,12 +122,15 @@
 
   <iframe id="mapFrame" src="map.html"></iframe>
 
+  <footer>© Demeco – Réseau national de déménageurs professionnels</footer>
+
   <script>
     function checkPwd(){
       const pwd = document.getElementById("pwd").value;
       const error = document.getElementById("errorMsg");
       if(pwd === "demo123"){ // 🔑 ton mot de passe ici
         document.getElementById("login").style.display = "none";
+        document.querySelector("footer").style.display = "none";
         const frame = document.getElementById("mapFrame");
         frame.style.display = "block";
       } else {
