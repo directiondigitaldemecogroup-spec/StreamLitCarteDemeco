@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accès sécurisé | Carte Demeco</title>
+  <title>Accès sécurisé | Carte Hexvia</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       height: 100vh;
@@ -16,24 +14,24 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #111; /* fond noir */
+      background: #0d0d0d; /* Noir léger revisité */
       color: #fff;
     }
 
     .login-container {
       text-align: center;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
       padding: 40px 50px;
       border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
       max-width: 400px;
       width: 90%;
       animation: fadeIn 1s ease;
     }
 
     .login-container img {
-      width: 160px;
+      width: 170px;
       margin-bottom: 25px;
     }
 
@@ -42,10 +40,11 @@
       margin-bottom: 10px;
       text-transform: uppercase;
       letter-spacing: 1px;
+      color: #4caf50; /* Vert Hexvia */
     }
 
     p {
-      color: #ddd;
+      color: #d5d5d5;
       font-size: 15px;
       margin-bottom: 25px;
     }
@@ -53,7 +52,7 @@
     input {
       padding: 10px 12px;
       border-radius: 6px;
-      border: 1px solid #555;
+      border: 1px solid #4caf50; /* vert Hexvia */
       width: 100%;
       font-size: 16px;
       text-align: center;
@@ -64,7 +63,7 @@
     }
 
     button {
-      background: #e30613; /* rouge Demeco */
+      background: #4caf50; /* vert Hexvia */
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -78,7 +77,7 @@
     }
 
     button:hover {
-      background: #b50410;
+      background: #3d8f40;
       transform: scale(1.04);
     }
 
@@ -100,7 +99,7 @@
       position: absolute;
       bottom: 15px;
       font-size: 13px;
-      color: #aaa;
+      color: #bbb;
     }
 
     @keyframes fadeIn {
@@ -112,9 +111,9 @@
 
 <body>
   <div id="login" class="login-container">
-    <img src="./Logo_Demeco_Transparent.png" alt="Logo Demeco">
+    <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Logo Hexvia">
     <h1>Accès sécurisé</h1>
-    <p>Espace réservé au réseau Demeco</p>
+    <p>Espace réservé au réseau Hexvia</p>
     <input type="password" id="pwd" placeholder="Entrez le mot de passe" />
     <button onclick="checkPwd()">Accéder à la carte</button>
     <div id="errorMsg" class="error"></div>
@@ -122,13 +121,14 @@
 
   <iframe id="mapFrame" src="map.html"></iframe>
 
-  <footer>© Demeco – Réseau national de déménageurs professionnels</footer>
+  <footer>© Hexvia – Réseau national de déménageurs professionnels</footer>
 
   <script>
     function checkPwd(){
       const pwd = document.getElementById("pwd").value;
       const error = document.getElementById("errorMsg");
-      if(pwd === "demo123"){ // 🔑 ton mot de passe ici
+
+      if(pwd === "hexvia123"){ // 🔑 Nouveau mot de passe Hexvia
         document.getElementById("login").style.display = "none";
         document.querySelector("footer").style.display = "none";
         const frame = document.getElementById("mapFrame");
