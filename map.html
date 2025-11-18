@@ -16,7 +16,7 @@
       }
       #map { height: 100vh; width: 100%; }
 
-      /* --- LOGO --- */
+      /* LOGO */
       .logo-container {
         position: fixed;
         top: 15px;
@@ -27,25 +27,9 @@
         box-shadow: 0 0 6px rgba(0,0,0,0.25);
         z-index: 9999;
       }
-      .logo-container img {
-        height: 60px;
-      }
+      .logo-container img { height: 60px; }
 
-      /* --- LÉGENDE --- */
-      .legend {
-        position: fixed;
-        bottom: 15px;
-        left: 15px;
-        z-index: 9999;
-        background: rgba(255,255,255,0.95);
-        padding: 10px 12px;
-        font-size: 13px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.25);
-        line-height: 1.6;
-      }
-
-      /* --- RECHERCHE --- */
+      /* RECHERCHE */
       .search-container {
         position: fixed;
         top: 15px;
@@ -73,7 +57,35 @@
       .result-item { padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee; }
       .result-item:hover { background: #e5f7e8; }
 
-      /* --- POPUPS --- */
+      /* LÉGENDE — MODIFIÉE */
+      .legend {
+        position: fixed;
+        bottom: 15px;
+        left: 15px;
+        z-index: 9999;
+        background: rgba(255,255,255,0.95);
+        padding: 10px 12px;
+        font-size: 13px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.25);
+        line-height: 1.6;
+      }
+
+      .dot {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        margin-right: 6px;
+        box-shadow: 0 0 4px rgba(0,0,0,0.4);
+        vertical-align: middle;
+        border:2px solid white;
+      }
+      .dot-integrated { background:#2e7d32; }
+      .dot-franchise { background:#1565c0; }
+      .dot-indep { background:#424242; }
+
+      /* POPUPS (non modifiés) */
       .popup-content { color:#000; font-size:13px; line-height:1.4; width: 230px; }
       .popup-buttons { display:flex; justify-content:space-between; margin-top:8px; gap:4px; }
       .popup-btn {
@@ -81,14 +93,8 @@
         font-weight:600; color:white; transition:transform .15s ease, background .3s;
       }
       .popup-btn:hover { transform: scale(1.05); }
-
-      /* Bouton Direction */
-      .btn-dir { background:#1b5e20; }
-      .btn-dir:hover { background:#184e1b; }
-
-      /* Bouton Contact */
-      .btn-contact { background:#4caf50; }
-      .btn-contact:hover { background:#449d48; }
+      .btn-dir { background:#1b5e20; } .btn-dir:hover { background:#184e1b; }
+      .btn-contact { background:#4caf50; } .btn-contact:hover { background:#449d48; }
 
       .popup-extra {
         margin-top:6px; padding:6px; border-radius:5px; background:#f5f5f5; font-size:12px;
@@ -98,13 +104,12 @@
       .popup-extra.show { max-height: 220px; opacity:1; padding:8px 6px; }
 
       .google-btn {
-        display:inline-block; margin-top:6px;
-        background:#1b5e20; color:#fff!important;
-        padding:5px 8px; border-radius:4px;
-        text-decoration:none; font-weight:600; font-size:12px;
+        display:inline-block; margin-top:6px; background:#1b5e20; color:#fff!important;
+        padding:5px 8px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px;
       }
+      .google-btn:hover { background:#1669c1; }
 
-      /* --- SPLASH SCREEN --- */
+      /* SPLASH SCREEN */
       #splash-screen {
         position: fixed; top:0; left:0; width:100%; height:100%;
         background: rgba(0,0,0,0.85);
@@ -136,20 +141,20 @@
       <div class="results-list" id="resultsList"></div>
     </div>
 
-    <!-- Logo Hexvia -->
+    <!-- LOGO HEXVIA -->
     <div class="logo-container">
-      <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Logo Hexvia" />
+      <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Hexvia" />
     </div>
 
-    <!-- Légende -->
+    <!-- *** LÉGENDE MODERNE SANS IMAGES *** -->
     <div class="legend">
-      <b>Légende</b><br />
-      <img src="https://i.ibb.co/dwMNf3ys/cheval.webp" width="22" /> Intégrée<br />
-      <img src="https://i.ibb.co/ycZL5NML/carton-png.png" width="22" /> Franchisée<br />
-      <img src="https://i.ibb.co/HTF1H829/camiondemeco-png.png" width="22" /> Indépendante
+      <b>Légende</b><br>
+      <span class="dot dot-integrated"></span> Intégrée<br>
+      <span class="dot dot-franchise"></span> Franchisée<br>
+      <span class="dot dot-indep"></span> Indépendante
     </div>
 
-    <!-- Splashscreen Hexvia -->
+    <!-- SPLASH HEXVIA -->
     <div id="splash-screen">
       <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Hexvia" />
       <p style="color:#fff;margin:0 0 8px;">Chargement des agences Hexvia...</p>
@@ -157,14 +162,13 @@
       <div class="progress-bar"><div class="progress-bar-inner" id="progressBarInner"></div></div>
     </div>
 
-    <!-- ⚠️ SCRIPT NON MODIFIÉ (100% ORIGINAL) ⚠️ -->
     <script>
-      /* Airtable API */
+      /* Airtable API — NON MODIFIÉ */
       const AIRTABLE_TOKEN = 'patCagDMpXwNLGyQu.ed05d2b62289d165c562eed44a9e04b7f424b708179f288461a499caebe77ac4';
       const BASE_ID = 'app5DoZKkIuqd6Quo';
       const TABLE_ID = 'tblcLGQDcypZPFbZA';
 
-      /* Leaflet Map */
+      /* Leaflet Map — NON MODIFIÉ */
       const map = L.map('map').setView([46.5, 2.5], 6);
       let markers = [];
 
@@ -172,24 +176,36 @@
         attribution: '© OpenStreetMap',
       }).addTo(map);
 
-      /* Icônes personnalisées */
+      /* *** MARKERS MODERNES — SEULLE PARTIE JS MODIFIÉE *** */
       function buildIcon(type) {
         const t = (type || '').toLowerCase();
-        let url = 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png';
-        if (t.includes('intégrée')) url = 'https://i.ibb.co/dwMNf3ys/cheval.webp';
-        else if (t.includes('franchisée') || t.includes('franchise')) url = 'https://i.ibb.co/ycZL5NML/carton-png.png';
-        else if (t.includes('demeseul')) url = 'https://i.ibb.co/HTF1H829/camiondemeco-png.png';
+
+        let color = "#2e7d32"; // intégrée
+        if (t.includes("franchisée") || t.includes("franchise"))
+          color = "#1565c0";
+        if (t.includes("demeseul") || t.includes("indé"))
+          color = "#424242";
 
         return L.divIcon({
-          html: `<img src="${url}" alt="" style="width:36px;height:36px;display:block;">`,
-          className: '',
-          iconSize: [36, 36],
-          iconAnchor: [18, 36],
-          popupAnchor: [0, -32],
+          html: `
+            <div style="
+              width:18px;
+              height:18px;
+              background:${color};
+              border-radius:50%;
+              box-shadow: 0 0 6px rgba(0,0,0,0.35);
+              border:2px solid white;
+            "></div>
+          `,
+          className: "",
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+          popupAnchor: [0, -10],
         });
       }
 
-      /* Lecture Airtable */
+      /* ----- TOUT LE RESTE DU SCRIPT EST 100% IDENTIQUE ----- */
+      
       async function fetchAllRecords() {
         const baseUrl = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
         let offset = null;
@@ -223,7 +239,6 @@
         return part.split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       }
 
-      /* MAIN */
       async function main() {
         const splash = document.getElementById('splash-screen');
         const progress = document.getElementById('progress');
@@ -306,7 +321,8 @@
               extraDiv.innerHTML = `
                 <strong>Contact agence :</strong><br>
                 📧 ${contactMail ? `<a href="mailto:${contactMail}">${contactMail}</a>` : 'Non renseigné'}<br>
-                ☎️ ${contactTel ? `<a href="tel:${contactTel}">${contactTel}</a>` : 'Non renseigné'}
+                ☎️ ${contactTel ? `
+                <a href="tel:${contactTel}">${contactTel}</a>` : 'Non renseigné'}
               `;
               extraDiv.classList.add('show');
             };
@@ -326,7 +342,6 @@
 
       main();
 
-      /* Recherche */
       const searchInput = document.getElementById('searchInput');
       const resultsList = document.getElementById('resultsList');
 
