@@ -21,13 +21,35 @@
         position: fixed;
         top: 15px;
         right: 15px;
-        background: rgba(255, 255, 255, 1);
+        background: rgba(255, 255, 255, 0.9);
         border-radius: 10px;
         padding: 6px 10px;
         box-shadow: 0 0 6px rgba(0,0,0,0.25);
         z-index: 9999;
       }
-      .logo-container img { height: 60px; }
+      .logo-container img { height: 60px; background:white; padding:6px; border-radius:8px; }
+
+      /* LEGENDE MODERNE */
+      .legend {
+        position: fixed;
+        bottom: 15px;
+        left: 15px;
+        z-index: 9999;
+        background: rgba(255,255,255,0.95);
+        padding: 10px 12px;
+        font-size: 13px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.25);
+        line-height: 1.6;
+      }
+      .legend-marker {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid white;
+        display: inline-block;
+        margin-right: 6px;
+      }
 
       /* RECHERCHE */
       .search-container {
@@ -41,7 +63,7 @@
         width: 100%;
         padding: 8px 10px;
         border-radius: 6px;
-        border: 1px solid #4caf50;
+        border: 1px solid #aaa;
         font-size: 14px;
         background:#fff;
       }
@@ -55,37 +77,9 @@
         display: none;
       }
       .result-item { padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee; }
-      .result-item:hover { background: #e5f7e8; }
+      .result-item:hover { background: #f5f5f5; }
 
-      /* LÉGENDE — MODIFIÉE */
-      .legend {
-        position: fixed;
-        bottom: 15px;
-        left: 15px;
-        z-index: 9999;
-        background: rgba(255,255,255,0.95);
-        padding: 10px 12px;
-        font-size: 13px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.25);
-        line-height: 1.6;
-      }
-
-      .dot {
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        margin-right: 6px;
-        box-shadow: 0 0 4px rgba(0,0,0,0.4);
-        vertical-align: middle;
-        border:2px solid white;
-      }
-      .dot-integrated { background:#2e7d32; }
-      .dot-franchise { background:#1565c0; }
-      .dot-indep { background:#424242; }
-
-      /* POPUPS (non modifiés) */
+      /* POPUPS */
       .popup-content { color:#000; font-size:13px; line-height:1.4; width: 230px; }
       .popup-buttons { display:flex; justify-content:space-between; margin-top:8px; gap:4px; }
       .popup-btn {
@@ -93,7 +87,7 @@
         font-weight:600; color:white; transition:transform .15s ease, background .3s;
       }
       .popup-btn:hover { transform: scale(1.05); }
-      .btn-dir { background:#1b5e20; } .btn-dir:hover { background:#184e1b; }
+      .btn-dir { background:#1976d2; } .btn-dir:hover { background:#1565c0; }
       .btn-contact { background:#4caf50; } .btn-contact:hover { background:#449d48; }
 
       .popup-extra {
@@ -104,32 +98,25 @@
       .popup-extra.show { max-height: 220px; opacity:1; padding:8px 6px; }
 
       .google-btn {
-        display:inline-block; margin-top:6px; background:#1b5e20; color:#fff!important;
+        display:inline-block; margin-top:6px; background:#1a73e8; color:#fff!important;
         padding:5px 8px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px;
       }
       .google-btn:hover { background:#1669c1; }
 
-      /* SPLASH SCREEN */
+      /* Splash */
       #splash-screen {
         position: fixed; top:0; left:0; width:100%; height:100%;
         background: rgba(0,0,0,0.85);
         display:flex; flex-direction:column; align-items:center; justify-content:center;
         z-index: 10000; transition: opacity 0.8s ease; backdrop-filter: blur(4px);
       }
-      #splash-screen img {
-        width: 160px;
-        margin-bottom: 25px;
-        background:white;
-        padding:12px;
-        border-radius:12px;
-      }
+      #splash-screen img { width: 160px; margin-bottom: 25px; }
       #progress { margin-top: 8px; font-size: 15px; color: #ccc; font-weight: 600; }
       .progress-bar {
         width: 250px; height: 10px; background: rgba(255,255,255,0.2);
         border-radius: 5px; margin-top: 12px; overflow: hidden; box-shadow: inset 0 0 5px rgba(0,0,0,0.25);
       }
       .progress-bar-inner { height: 100%; width: 0%; background: #4caf50; transition: width 0.3s ease; }
-
     </style>
   </head>
 
@@ -143,69 +130,57 @@
 
     <!-- LOGO HEXVIA -->
     <div class="logo-container">
-      <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Hexvia" />
+      <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Logo Hexvia" />
     </div>
 
-    <!-- *** LÉGENDE MODERNE SANS IMAGES *** -->
+    <!-- LEGENDE -->
     <div class="legend">
-      <b>Légende</b><br>
-      <span class="dot dot-integrated"></span> Intégrée<br>
-      <span class="dot dot-franchise"></span> Franchisée<br>
-      <span class="dot dot-indep"></span> Demeseul
+      <b>Légende</b><br />
+      <span class="legend-marker" style="background:#2e7d32;"></span> Intégrée<br />
+      <span class="legend-marker" style="background:#1565c0;"></span> Franchisée<br />
+      <span class="legend-marker" style="background:#424242;"></span> Demeseul
     </div>
 
-    <!-- SPLASH HEXVIA -->
+    <!-- Splash -->
     <div id="splash-screen">
       <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Hexvia" />
-      <p style="color:#fff;margin:0 0 8px;">Chargement des agences du groupe Hexvia...</p>
+      <p style="color:#fff;margin:0 0 8px;">Chargement des agences Hexvia...</p>
       <div id="progress">0%</div>
       <div class="progress-bar"><div class="progress-bar-inner" id="progressBarInner"></div></div>
     </div>
 
     <script>
-      /* Airtable API — NON MODIFIÉ */
+      /* Airtable API */
       const AIRTABLE_TOKEN = 'patCagDMpXwNLGyQu.ed05d2b62289d165c562eed44a9e04b7f424b708179f288461a499caebe77ac4';
       const BASE_ID = 'app5DoZKkIuqd6Quo';
       const TABLE_ID = 'tblcLGQDcypZPFbZA';
 
-      /* Leaflet Map — NON MODIFIÉ */
+      /* Leaflet */
       const map = L.map('map').setView([46.5, 2.5], 6);
       let markers = [];
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-      }).addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-      /* *** MARKERS MODERNES — SEULLE PARTIE JS MODIFIÉE *** */
-      function buildIcon(type) {
+      /* ---- MARKERS MODERNES + HALO PREMIUM ---- */
+      function buildIcon(type, googleNote) {
         const t = (type || '').toLowerCase();
 
         let color = "#2e7d32"; // intégrée
-        if (t.includes("franchisée") || t.includes("franchise"))
-          color = "#1565c0";
-        if (t.includes("demeseul") || t.includes("demeseul"))
-          color = "#424242";
+        if (t.includes("franchise")) color = "#1565c0";
+        if (t.includes("demeseul")) color = "#424242";
+
+        const halo = googleNote ? "box-shadow:0 0 8px rgba(255,215,0,0.9);" : "";
 
         return L.divIcon({
-          html: `
-            <div style="
-              width:18px;
-              height:18px;
-              background:${color};
-              border-radius:50%;
-              box-shadow: 0 0 6px rgba(0,0,0,0.35);
-              border:2px solid white;
-            "></div>
-          `,
+          html: `<div style="width:18px;height:18px;background:${color};border-radius:50%;border:2px solid #fff;${halo}"></div>`,
           className: "",
-          iconSize: [18, 18],
-          iconAnchor: [9, 9],
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
           popupAnchor: [0, -10],
         });
       }
 
-      /* ----- TOUT LE RESTE DU SCRIPT EST 100% IDENTIQUE ----- */
-      
+      /* Airtable */
       async function fetchAllRecords() {
         const baseUrl = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
         let offset = null;
@@ -213,18 +188,11 @@
 
         do {
           const url = new URL(baseUrl);
-          url.searchParams.set('pageSize', '100');
-          if (offset) url.searchParams.set('offset', offset);
+          url.searchParams.set("pageSize", "100");
+          if (offset) url.searchParams.set("offset", offset);
 
-          const res = await fetch(url, {
-            headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
-          });
+          const res = await fetch(url, { headers:{ Authorization:`Bearer ${AIRTABLE_TOKEN}` } });
           const data = await res.json();
-
-          if (data.error) {
-            console.error('Erreur Airtable:', data.error);
-            break;
-          }
 
           (data.records || []).forEach(r => all.push(r));
           offset = data.offset;
@@ -239,116 +207,89 @@
         return part.split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       }
 
+      /* ------------------------ MAIN ------------------------ */
       async function main() {
         const splash = document.getElementById('splash-screen');
         const progress = document.getElementById('progress');
-        const progressBarInner = document.getElementById('progressBarInner');
+        const bar = document.getElementById('progressBarInner');
 
         const records = await fetchAllRecords();
         let done = 0;
 
         for (const rec of records) {
           const f = rec.fields || {};
-          const lat = parseFloat(f['Latitude']);
-          const lng = parseFloat(f['Longitude']);
-          if (isNaN(lat) || isNaN(lng)) {
-            done++;
-            const pct0 = Math.round((done / records.length) * 100);
-            progress.textContent = pct0 + '%';
-            progressBarInner.style.width = pct0 + '%';
-            continue;
+
+          const lat = parseFloat(f["Latitude"]);
+          const lng = parseFloat(f["Longitude"]);
+          if (isNaN(lat) || isNaN(lng)) continue;
+
+          const name = f["AGENCE "] || f["AGENCE"] || "Sans nom";
+          const address = f["ADRESSE-OK"] || "";
+          const type = f["TYPE AGENCE"] || "";
+          const type2 = f["TYPE 2"] || "";
+
+          const googleAvis = f["URL Avis Google"] || null;
+          const googleNote = f["note_google"] || null;
+
+          /* Couleur de Note */
+          let noteStyle = "";
+          if (googleNote) {
+            const n = parseFloat(googleNote);
+            if (n >= 4) noteStyle = "color:#2e7d32;font-weight:bold;";
+            else if (n >= 3) noteStyle = "color:#ff9800;font-weight:bold;";
+            else noteStyle = "color:#e53935;font-weight:bold;";
           }
 
-          const name = f['AGENCE '] || f['AGENCE'] || 'Sans nom';
-          const address = f['ADRESSE-OK'] || '';
-          const type = f['TYPE AGENCE'] || '';
-          const type2 = f['TYPE 2'] || '';
-          const site = f['LIEN SITE WEB '] || '#';
-          const googleAvis = f['URL Avis Google'] || null;
-
-          const dirMail = f["DIRECTION D'AGENCE"] || '';
-          const dirNom = getNameFromEmail(dirMail);
-          const dirTel = f['NUMERO HISTORIQUE'] || 'Non renseigné';
-          const contactMail = f['MAIL CONTACT LEAD '] || 'Non renseigné';
-          const contactTel = f['NUMERO DEMECO.FR'] || 'Non renseigné';
-
-          const streetViewURL = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
-
+          /* Popup HTML */
           const popupHTML = `
             <div class="popup-content">
               <strong style="font-size:14px;">${name}</strong><br>
-              🏢 <em>${type2 || type || 'Type non renseigné'}</em><br>
+              🏢 <em>${type2 || type}</em><br>
               📍 ${address}<br>
-              🌐 <a href="${site}" target="_blank" rel="noopener">Site web</a><br>
-              ${googleAvis ? `<a href="${googleAvis}" class="google-btn" target="_blank" rel="noopener">⭐ Avis Google</a>` : ''}
+
+              ${googleNote ? `<div style="${noteStyle}">⭐ ${googleNote}/5</div>` : ``}
+
+              ${googleAvis ? `<a href="${googleAvis}" class="google-btn" target="_blank">Voir les avis</a>` : ``}
 
               <div class="popup-buttons">
                 <button class="popup-btn btn-dir">Direction</button>
                 <button class="popup-btn btn-contact">Contact</button>
               </div>
 
-              <a href="${streetViewURL}" target="_blank" rel="noopener"
-                 style="display:block;margin-top:8px;text-align:center;background:#000;color:#fff;padding:6px;border-radius:4px;font-size:12px;font-weight:600;text-decoration:none;">
-                 🚶 Voir en Street View
-              </a>
-
               <div class="popup-extra"></div>
             </div>
           `;
 
-          const marker = L.marker([lat, lng], { icon: buildIcon(type) })
-            .addTo(map)
-            .bindPopup(popupHTML);
-
-          marker.on('popupopen', (e) => {
-            const popupEl = e.popup._contentNode;
-            const extraDiv = popupEl.querySelector('.popup-extra');
-
-            const dirBtn = popupEl.querySelector('.btn-dir');
-            const contactBtn = popupEl.querySelector('.btn-contact');
-
-            if (dirBtn) dirBtn.onclick = () => {
-              extraDiv.innerHTML = `
-                <strong>Direction :</strong><br>
-                👤 ${dirNom}<br>
-                📧 ${dirMail ? `<a href="mailto:${dirMail}">${dirMail}</a>` : 'Non renseigné'}<br>
-                ☎️ ${dirTel ? `<a href="tel:${dirTel}">${dirTel}</a>` : 'Non renseigné'}
-              `;
-              extraDiv.classList.add('show');
-            };
-
-            if (contactBtn) contactBtn.onclick = () => {
-              extraDiv.innerHTML = `
-                <strong>Contact agence :</strong><br>
-                📧 ${contactMail ? `<a href="mailto:${contactMail}">${contactMail}</a>` : 'Non renseigné'}<br>
-                ☎️ ${contactTel ? `
-                <a href="tel:${contactTel}">${contactTel}</a>` : 'Non renseigné'}
-              `;
-              extraDiv.classList.add('show');
-            };
-          });
+          /* MARQUEUR */
+          const marker = L.marker([lat, lng], {
+            icon: buildIcon(type, googleNote)
+          })
+          .addTo(map)
+          .bindPopup(popupHTML);
 
           markers.push({ name, type, type2, marker });
 
+          /* Progression */
           done++;
           const pct = Math.round((done / records.length) * 100);
-          progress.textContent = pct + '%';
-          progressBarInner.style.width = pct + '%';
+          progress.textContent = pct + "%";
+          bar.style.width = pct + "%";
         }
 
-        setTimeout(() => { splash.style.opacity = 0; }, 600);
-        setTimeout(() => { splash.style.display = 'none'; }, 1400);
+        setTimeout(() => splash.style.opacity = 0, 500);
+        setTimeout(() => splash.remove(), 1200);
       }
 
       main();
 
-      const searchInput = document.getElementById('searchInput');
-      const resultsList = document.getElementById('resultsList');
+      /* Recherche */
+      const searchInput = document.getElementById("searchInput");
+      const resultsList = document.getElementById("resultsList");
 
-      searchInput.addEventListener('input', () => {
+      searchInput.addEventListener("input", () => {
         const q = searchInput.value.trim().toLowerCase();
-        resultsList.innerHTML = '';
-        if (!q) { resultsList.style.display = 'none'; return; }
+        resultsList.innerHTML = "";
+        if (!q) return resultsList.style.display = "none";
 
         const filtered = markers.filter(m =>
           m.name.toLowerCase().includes(q) ||
@@ -358,23 +299,22 @@
 
         if (filtered.length === 0) {
           resultsList.innerHTML = "<div class='result-item'>Aucune agence trouvée</div>";
-          resultsList.style.display = 'block';
-          return;
+          return resultsList.style.display = "block";
         }
 
-        filtered.forEach((m) => {
-          const item = document.createElement('div');
-          item.className = 'result-item';
+        filtered.forEach(m => {
+          const item = document.createElement("div");
+          item.className = "result-item";
           item.innerHTML = `<b>${m.name}</b><br><small>${m.type2 || m.type}</small>`;
-          item.addEventListener('click', () => {
+          item.onclick = () => {
             map.setView(m.marker.getLatLng(), 13);
             m.marker.openPopup();
-            resultsList.style.display = 'none';
-          });
+            resultsList.style.display = "none";
+          };
           resultsList.appendChild(item);
         });
 
-        resultsList.style.display = 'block';
+        resultsList.style.display = "block";
       });
     </script>
   </body>
