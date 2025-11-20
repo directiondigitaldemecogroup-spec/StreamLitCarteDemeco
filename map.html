@@ -60,7 +60,7 @@
       .gradient-bar {
         width: 150px;
         height: 20px;
-        background: linear-gradient(to right, #fff7e6, #ffcc80, #ff9800, #f57c00, #e65100);
+        background: linear-gradient(to right, #e8f5e9, #a5d6a7, #66bb6a, #43a047, #2e7d32);
         border: 1px solid #ccc;
         border-radius: 4px;
       }
@@ -308,18 +308,18 @@
         return inside;
       }
 
-      /* Générer une couleur basée sur le nombre d'agences */
+      /* Générer une couleur basée sur le nombre d'agences - DÉGRADÉ VERT */
       function getColorForCount(count, maxCount) {
         if (count === 0) return '#f5f5f5';
         
-        // Dégradé de jaune clair à orange foncé
+        // Dégradé de vert clair à vert foncé
         const ratio = count / maxCount;
         
-        if (ratio < 0.2) return '#fff7e6';
-        if (ratio < 0.4) return '#ffcc80';
-        if (ratio < 0.6) return '#ff9800';
-        if (ratio < 0.8) return '#f57c00';
-        return '#e65100';
+        if (ratio < 0.2) return '#e8f5e9';  // Vert très clair
+        if (ratio < 0.4) return '#a5d6a7';  // Vert clair
+        if (ratio < 0.6) return '#66bb6a';  // Vert moyen
+        if (ratio < 0.8) return '#43a047';  // Vert foncé
+        return '#2e7d32';                    // Vert très foncé
       }
 
       /* ------------------------ MAIN ------------------------ */
