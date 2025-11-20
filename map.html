@@ -219,11 +219,26 @@
 
       /* ---- MARKERS MODERNES + HALO PREMIUM ---- */
       function buildIcon(type, googleNote) {
-        const t = (type || '').toLowerCase();
+        const t = (type || '').toLowerCase().trim();
+        
+        // DÉBOGAGE - Afficher dans la console
+        console.log('Type reçu:', type, '| Après traitement:', t);
 
-        let color = "#2e7d32"; // intégrée
-        if (t.includes("franchise")) color = "#1565c0";
-        if (t.includes("demeseul")) color = "#424242";
+        let color = "#2e7d32"; // intégrée par défaut
+        
+        // Détection plus robuste avec normalisation des accents
+        const typeNormalized = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        console.log('Type normalisé (sans accents):', typeNormalized);
+        
+        if (typeNormalized.includes("franchise")) {
+          color = "#1565c0";
+          console.log('→ Couleur BLEUE (Franchisée)');
+        } else if (typeNormalized.includes("demeseul")) {
+          color = "#424242";
+          console.log('→ Couleur GRISE (Demeseul)');
+        } else {
+          console.log('→ Couleur VERTE (Intégrée)');
+        }
 
         const halo = googleNote ? "box-shadow:0 0 8px rgba(255,215,0,0.9);" : "";
 
@@ -509,3 +524,16 @@
     </script>
   </body>
 </html>
+```
+
+**Comment utiliser ce code :**
+
+1. **Ouvrez le fichier HTML** dans votre navigateur
+2. **Ouvrez la console** (F12 ou clic droit → Inspecter → Console)
+3. **Regardez les messages** qui s'affichent pour chaque agence
+
+Vous verrez des messages comme :
+```
+Type reçu: Intégrée | Après traitement: intégrée
+Type normalisé (sans accents): integree
+→ Couleur VERTE (Intégrée)
