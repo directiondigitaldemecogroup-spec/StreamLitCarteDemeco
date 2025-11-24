@@ -103,30 +103,6 @@
       .result-item { padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee; }
       .result-item:hover { background: #f5f5f5; }
 
-      /* FILTRES TYPES AGENCES */
-      .filter-container {
-        position: fixed;
-        top: 65px;
-        left: 15px;
-        z-index: 9999;
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        max-width: 260px;
-      }
-      .filter-container button {
-        padding: 4px 8px;
-        border-radius: 6px;
-        border: 1px solid #aaa;
-        background: #fff;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 600;
-      }
-      .filter-container button:hover {
-        background: #e9e9e9;
-      }
-
       /* POPUPS */
       .popup-content { color:#000; font-size:13px; line-height:1.4; width: 230px; }
       .popup-buttons { display:flex; justify-content:space-between; margin-top:8px; gap:4px; }
@@ -177,14 +153,6 @@
     <div class="search-container">
       <input type="text" id="searchInput" placeholder="🔍 Rechercher une agence..." />
       <div class="results-list" id="resultsList"></div>
-    </div>
-
-    <!-- FILTRES TYPES D'AGENCES -->
-    <div class="filter-container">
-      <button onclick="filterMarkers('all')">Toutes</button>
-      <button onclick="filterMarkers('integrée')">Intégrées</button>
-      <button onclick="filterMarkers('franchisée')">Franchisées</button>
-      <button onclick="filterMarkers('demeseul')">Demeseuls</button>
     </div>
 
     <!-- LOGO HEXVIA -->
@@ -251,20 +219,21 @@
 
       /* ---- MARKERS MODERNES + HALO PREMIUM ---- */
       function buildIcon(type, googleNote) {
+        const t = (type || '').toLowerCase();
         const t = (type || '').toLowerCase().trim();
         
         // DÉBOGAGE - Afficher dans la console
         console.log('Type reçu:', type, '| Après traitement:', t);
 
+        let color = "#2e7d32"; // intégrée
+        if (t.includes("franchise")) color = "#1565c0";
+        if (t.includes("demeseul")) color = "#424242";
         let color = "#2e7d32"; // intégrée par défaut
         
         // Détection plus robuste avec normalisation des accents
         const typeNormalized = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-        const typeNormalized = t.normalize("NFD").replace(/[̀-ͯ]/g, "");
         console.log('Type normalisé (sans accents):', typeNormalized);
         
-
         if (typeNormalized.includes("franchise")) {
           color = "#1565c0";
           console.log('→ Couleur BLEUE (Franchisée)');
@@ -321,10 +290,8 @@
       /* Trouver le département d'une coordonnée */
       function findDepartment(lat, lng, geojson) {
         if (!geojson) return null;
-        
 
         const point = [lng, lat]; // GeoJSON utilise [lng, lat]
-        
 
         for (const feature of geojson.features) {
           if (pointInPolygon(point, feature.geometry)) {
@@ -363,22 +330,15 @@
       /* Générer une couleur basée sur le nombre d'agences - DÉGRADÉ VERT */
       function getColorForCount(count, maxCount) {
         if (count === 0) return '#f5f5f5';
-        
-        // Dégradé de vert clair à vert foncé
 
+        // Dégradé de vert clair à vert foncé
         const ratio = count / maxCount;
-        
+
         if (ratio < 0.2) return '#e8f5e9';  // Vert très clair
         if (ratio < 0.4) return '#a5d6a7';  // Vert clair
         if (ratio < 0.6) return '#66bb6a';  // Vert moyen
         if (ratio < 0.8) return '#43a047';  // Vert foncé
         return '#2e7d32';                    // Vert très foncé
-
-        if (ratio < 0.2) return '#e8f5e9';
-        if (ratio < 0.4) return '#a5d6a7';
-        if (ratio < 0.6) return '#66bb6a';
-        if (ratio < 0.8) return '#43a047';
-        return '#2e7d32';
       }
 
       /* ------------------------ MAIN ------------------------ */
@@ -410,7 +370,6 @@
           const f = rec.fields || {};
           const lat = parseFloat(f["Latitude"]);
           const lng = parseFloat(f["Longitude"]);
-          
 
           if (isNaN(lat) || isNaN(lng)) continue;
 
@@ -432,7 +391,6 @@
 
         // Étape 3: Afficher les départements (80%)
         progress.textContent = "Affichage des départements...";
-        
 
         const maxCount = Math.max(...Object.values(deptCount), 1);
 
@@ -452,7 +410,6 @@
             const code = feature.properties.code;
             const nom = feature.properties.nom;
             const count = deptCount[code] || 0;
-            
 
             layer.bindTooltip(
               `<div class="dept-tooltip"><b>${nom} (${code})</b><br>${count} agence${count !== 1 ? 's' : ''}</div>`,
@@ -479,7 +436,6 @@
 
         // Étape 4: Ajouter les marqueurs (100%)
         progress.textContent = "Ajout des agences...";
-        
 
         let done = 0;
         for (const agency of agenciesData) {
@@ -546,7 +502,6 @@
           const filtered = markers.filter(m =>
             m.name.toLowerCase().includes(q) ||
             m.type.toLowerCase().includes(q) ||
-            (m.type && m.type.toLowerCase().includes(q)) ||
             (m.type2 && m.type2.toLowerCase().includes(q))
           );
 
@@ -576,49 +531,13 @@
 ```
 
 **Comment utiliser ce code :**
-      /* ---- FILTRES TYPES AGENCES ---- */
-      function normalizeType(t) {
-        return (t || "")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[̀-ͯ]/g, "");
-      }
 
 1. **Ouvrez le fichier HTML** dans votre navigateur
 2. **Ouvrez la console** (F12 ou clic droit → Inspecter → Console)
 3. **Regardez les messages** qui s'affichent pour chaque agence
-      function filterMarkers(type) {
-        markers.forEach(obj => {
-          const t = normalizeType(obj.type || obj.type2);
 
 Vous verrez des messages comme :
 ```
 Type reçu: Intégrée | Après traitement: intégrée
 Type normalisé (sans accents): integree
 → Couleur VERTE (Intégrée)
-          if (type === 'all') {
-            if (!map.hasLayer(obj.marker)) obj.marker.addTo(map);
-            return;
-          }
-
-          if (type === 'integrée' && t.includes('integree')) {
-            if (!map.hasLayer(obj.marker)) obj.marker.addTo(map);
-            return;
-          }
-
-          if (type === 'franchisée' && t.includes('franchise')) {
-            if (!map.hasLayer(obj.marker)) obj.marker.addTo(map);
-            return;
-          }
-
-          if (type === 'demeseul' && t.includes('demeseul')) {
-            if (!map.hasLayer(obj.marker)) obj.marker.addTo(map);
-            return;
-          }
-
-          if (map.hasLayer(obj.marker)) map.removeLayer(obj.marker);
-        });
-      }
-    </script>
-  </body>
-</html>
