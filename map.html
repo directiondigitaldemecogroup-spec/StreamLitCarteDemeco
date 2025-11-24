@@ -135,8 +135,45 @@
         const mail = f["DIRECTION D'AGENCE"] || "";
         const phone = f["NUMERO DEMECO.FR"] || "";
 
-        let prenom = "", nom = "";
-        if (mail.includes('@')) {
-          const parts = mail.split('@')[0].split('.');
-          prenom = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : "";
-          nom = parts[1] ? parts[1].toUpper
+        // Extraction contact désactivée (bloc corrompu)
+
+        const marker = L.marker([lat, lng], { icon: buildIcon(f["TYPE AGENCE"]) })
+          .addTo(map)
+          .bindPopup(`<b>${f["AGENCE "] || f["AGENCE"]}</b><br>${f["ADRESSE-OK"] || ''}`);
+
+        markers.push({ name: f["AGENCE "] || f["AGENCE"], marker });
+      }
+    }
+
+    function initSearch() {
+      const input = document.getElementById("searchInput");
+      const list = document.getElementById("resultsList");
+
+      input.addEventListener("input", () => {
+        const q = input.value.toLowerCase();
+        list.innerHTML = "";
+        if (!q) { list.style.display = "none"; return; }
+
+        const results = markers.filter(m => m.name.toLowerCase().includes(q));
+        results.forEach(r => {
+          const el = document.createElement("div");
+          el.className = "result-item";
+          el.textContent = r.name;
+          el.onclick = () => {
+            map.setView(r.marker.getLatLng(), 13);
+            r.marker.openPopup();
+            list.style.display = "none";
+          };
+          list.appendChild(el);
+        });
+
+        list.style.display = "block";
+      });
+    }
+
+    function filterMarkers(type) {
+      markers.forEach(({ marker }) => marker.addTo(map));
+    }
+  </script>
+</body>
+</html>
