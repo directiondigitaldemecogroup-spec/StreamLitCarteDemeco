@@ -1,151 +1,142 @@
 <!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Carte interactive Hexvia - Départements</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carte interactive Hexvia - Départements</title>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-    <style>
-      html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
-      #map { height: 100vh; width: 100%; }
+  <style>
+    html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
+    #map { height: 100vh; width: 100%; }
 
-      .logo-container { position: fixed; top: 15px; right: 15px; background: rgba(255,255,255,0.9); border-radius: 10px; padding: 6px 10px; box-shadow: 0 0 6px rgba(0,0,0,0.25); z-index: 9999; }
-      .logo-container img { height: 60px; background:white; padding:6px; border-radius:8px; }
+    .logo-container { position: fixed; top: 15px; right: 15px; background: rgba(255,255,255,0.9); border-radius: 10px; padding: 6px 10px; box-shadow: 0 0 6px rgba(0,0,0,0.25); z-index: 9999; }
+    .logo-container img { height: 60px; background:white; padding:6px; border-radius:8px; }
 
-      .legend { position: fixed; bottom: 15px; left: 15px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 12px 14px; font-size: 13px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.25); line-height: 1.8; max-width: 250px; }
-      .legend-marker { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; display: inline-block; margin-right: 6px; }
+    .legend { position: fixed; bottom: 15px; left: 15px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 12px 14px; font-size: 13px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.25); line-height: 1.8; max-width: 250px; }
+    .legend-marker { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; display: inline-block; margin-right: 6px; }
 
-      .search-container { position: fixed; top: 15px; left: 15px; z-index: 9999; width: 260px; }
-      .search-container input { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #aaa; font-size: 14px; background:#fff; }
+    .search-container { position: fixed; top: 15px; left: 15px; z-index: 9999; width: 260px; }
+    .search-container input { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #aaa; font-size: 14px; background:#fff; }
 
-      .results-list { background: rgba(255,255,255,0.95); max-height: 200px; overflow-y: auto; border-radius: 6px; margin-top: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); display: none; }
-      .result-item { padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee; }
-      .result-item:hover { background: #f5f5f5; }
+    .results-list { background: rgba(255,255,255,0.95); max-height: 200px; overflow-y: auto; border-radius: 6px; margin-top: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); display: none; }
+    .result-item { padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+    .result-item:hover { background: #f5f5f5; }
 
-      .popup-content { color:#000; font-size:13px; line-height:1.4; width: 230px; }
-      .popup-buttons { display:flex; justify-content:space-between; margin-top:8px; gap:4px; }
-      .popup-btn { flex:1; padding:6px 8px; border:none; border-radius:4px; font-size:12px; cursor:pointer; font-weight:600; color:white; }
-      .btn-dir { background:#1976d2; }
-      .btn-contact { background:#4caf50; }
-    </style>
-  </head>
+    .filter-container { position: fixed; top: 65px; left: 15px; z-index: 9999; display: flex; gap: 6px; flex-wrap: wrap; max-width: 260px; }
+    .filter-container button { padding: 4px 8px; border-radius: 6px; border: 1px solid #aaa; background: #fff; cursor: pointer; font-size: 12px; font-weight: 600; }
+    .filter-container button:hover { background: #e9e9e9; }
 
-  <body>
-    <div id="map"></div>
+    .popup-content { color:#000; font-size:13px; line-height:1.4; width: 230px; }
+    .popup-buttons { display:flex; justify-content:space-between; margin-top:8px; gap:4px; }
+    .popup-btn { flex:1; padding:6px 8px; border:none; border-radius:4px; font-size:12px; cursor:pointer; font-weight:600; color:white; }
+    .btn-dir { background:#1976d2; }
+    .btn-contact { background:#4caf50; }
+  </style>
+</head>
 
-    <div class="search-container">
-      <input type="text" id="searchInput" placeholder="🔍 Rechercher une agence..." />
-      <div class="results-list" id="resultsList"></div>
-    </div>
+<body>
+  <div id="map"></div>
 
-    <div class="logo-container">
-      <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Logo Hexvia" />
-    </div>
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="🔍 Rechercher une agence..." />
+    <div class="results-list" id="resultsList"></div>
+  </div>
 
-    <div class="legend">
+  <div class="filter-container">
+    <button onclick="filterMarkers('all')">Toutes</button>
+    <button onclick="filterMarkers('integrée')">Intégrées</button>
+    <button onclick="filterMarkers('franchisée')">Franchisées</button>
+    <button onclick="filterMarkers('demeseul')">Demeseuls</button>
+  </div>
+
+  <div class="logo-container">
+    <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Logo Hexvia" />
+  </div>
+
+  <div class="legend">
+    <div class="legend-section">
       <b>Types d'agences</b><br />
       <span class="legend-marker" style="background:#2e7d32;"></span> Intégrée<br />
       <span class="legend-marker" style="background:#1565c0;"></span> Franchisée<br />
       <span class="legend-marker" style="background:#424242;"></span> Demeseul
     </div>
+    <div class="legend-section">
+      <b>Densité par département</b><br />
+      <div class="legend-gradient">
+        <span style="font-size:11px;">0</span>
+        <div class="gradient-bar"></div>
+        <span style="font-size:11px;">Max</span>
+      </div>
+    </div>
+  </div>
 
-    <script>
-      window.addEventListener('load', function() { initMap(); });
+  <script>
+    window.addEventListener('load', function() { initMap(); });
 
-      const AIRTABLE_TOKEN = 'patCagDMpXwNLGyQu.ed05d2b62289d165c562eed44a9e04b7f424b708179f288461a499caebe77ac4';
-      const BASE_ID = 'app5DoZKkIuqd6Quo';
-      const TABLE_ID = 'tblcLGQDcypZPFbZA';
+    const AIRTABLE_TOKEN = 'patCagDMpXwNLGyQu.ed05d2b62289d165c562eed44a9e04b7f424b708179f288461a499caebe77ac4';
+    const BASE_ID = 'app5DoZKkIuqd6Quo';
+    const TABLE_ID = 'tblcLGQDcypZPFbZA';
 
-      let map;
-      let markers = [];
+    let map;
+    let markers = [];
 
-      function initMap() {
-        map = L.map('map').setView([46.5, 2.5], 6);
+    function initMap() {
+      map = L.map('map').setView([46.5, 2.5], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      initSearch();
+      main();
+    }
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        initSearch();
-        main();
-      }
+    function buildIcon(type) {
+      let color = "#2e7d32";
+      const t = (type || "").toLowerCase();
+      if (t.includes("franchise")) color = "#1565c0";
+      if (t.includes("demeseul")) color = "#424242";
 
-      function buildIcon(type) {
-        let color = "#2e7d32";
-        const t = (type || "").toLowerCase();
-        if (t.includes("franchise")) color = "#1565c0";
-        if (t.includes("demeseul")) color = "#424242";
+      return L.divIcon({
+        html: `<div style="width:18px;height:18px;background:${color};border-radius:50%;border:2px solid #fff;"></div>`,
+        className: "",
+        iconSize: [20, 20], iconAnchor: [10, 10], popupAnchor: [0, -10]
+      });
+    }
 
-        return L.divIcon({
-          html: `<div style="width:18px;height:18px;background:${color};border-radius:50%;border:2px solid #fff;"></div>`,
-          className: "",
-          iconSize: [20, 20], iconAnchor: [10, 10], popupAnchor: [0, -10]
-        });
-      }
+    async function fetchAllRecords() {
+      const baseUrl = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
+      let offset = null;
+      const all = [];
 
-      async function fetchAllRecords() {
-        const baseUrl = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
-        let offset = null;
-        const all = [];
+      do {
+        const url = new URL(baseUrl);
+        url.searchParams.set("pageSize", "100");
+        if (offset) url.searchParams.set("offset", offset);
 
-        do {
-          const url = new URL(baseUrl);
-          url.searchParams.set("pageSize", "100");
-          if (offset) url.searchParams.set("offset", offset);
+        const res = await fetch(url, { headers:{ Authorization:`Bearer ${AIRTABLE_TOKEN}` } });
+        const data = await res.json();
 
-          const res = await fetch(url, { headers:{ Authorization:`Bearer ${AIRTABLE_TOKEN}` } });
-          const data = await res.json();
+        (data.records || []).forEach(r => all.push(r));
+        offset = data.offset;
+      } while (offset);
 
-          (data.records || []).forEach(r => all.push(r));
-          offset = data.offset;
-        } while (offset);
+      return all;
+    }
 
-        return all;
-      }
+    async function main() {
+      const records = await fetchAllRecords();
 
-      async function main() {
-        const records = await fetchAllRecords();
+      for (const rec of records) {
+        const f = rec.fields || {};
+        const lat = parseFloat(f["Latitude"]);
+        const lng = parseFloat(f["Longitude"]);
+        if (isNaN(lat) || isNaN(lng)) continue;
 
-        for (const rec of records) {
-          const f = rec.fields || {};
-          const lat = parseFloat(f["Latitude"]);
-          const lng = parseFloat(f["Longitude"]);
-          if (isNaN(lat) || isNaN(lng)) continue;
+        const mail = f["DIRECTION D'AGENCE"] || "";
+        const phone = f["NUMERO DEMECO.FR"] || "";
 
-          const mail = f["DIRECTION D'AGENCE"] || "";
-          const phone = f["NUMERO DEMECO.FR"] || "";
-
-          let prenom = "", nom = "";
-          if (mail.includes('@')) {
-            const parts = mail.split('@')[0].split('.');
-            prenom = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : "";
-            nom = parts[1] ? parts[1].toUpperCase() : "";
-          }
-
-          const popupHTML = `
-            <div class="popup-content">
-              <strong style="font-size:14px;">${f["AGENCE"] || "Sans nom"}</strong><br>
-              📍 ${f["ADRESSE-OK"] || ""}<br>
-
-              <hr style="margin:8px 0;">
-              <b>👤 Directeur :</b> ${prenom} ${nom}<br>
-              <b>📧 Mail :</b> ${mail}<br>
-              <b>📞 Téléphone :</b> ${phone}<br>
-
-              <div class="popup-buttons">
-                <button class="popup-btn btn-dir" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}', '_blank')">Itinéraire</button>
-                ${mail ? `<button class="popup-btn btn-contact" onclick=\"window.location.href='mailto:${mail}'\">Contact</button>` : `<button class="popup-btn btn-contact" disabled>Contact</button>`}
-              </div>
-            </div>
-          `;
-
-          const marker = L.marker([lat, lng], { icon: buildIcon(f["TYPE AGENCE"]) })
-            .addTo(map)
-            .bindPopup(popupHTML);
-
-          markers.push({ name: f["AGENCE"], marker });
-        }
-      }
-
-      function initSearch() {
-        const searchInput
+        let prenom = "", nom = "";
+        if (mail.includes('@')) {
+          const parts = mail.split('@')[0].split('.');
+          prenom = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : "";
+          nom = parts[1] ? parts[1].toUpper
