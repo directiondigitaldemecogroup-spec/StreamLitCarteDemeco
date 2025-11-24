@@ -408,7 +408,10 @@
             type: f["TYPE AGENCE"] || "",
             type2: f["TYPE 2"] || "",
             googleAvis: f["URL Avis Google"] || null,
-            googleNote: f["note_google"] || null
+            googleNote: f["note_google"] || null,
+            directionMail: f["DIRECTION D'AGENCE"] || "",
+            phone: f["NUMERO DEMECO.FR"] || ""
+          ,: f["note_google"] || null
           });
         }
 
@@ -471,6 +474,15 @@
             else noteStyle = "color:#e53935;font-weight:bold;";
           }
 
+          const contactMail = agency.directionMail || "";
+          const phone = agency.phone || "";
+          let prenom = "", nom = "";
+          if (contactMail.includes('@')) {
+            const parts = contactMail.split('@')[0].split('.');
+            prenom = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : "";
+            nom = parts[1] ? parts[1].toUpperCase() : "";
+          }
+
           const popupHTML = `
             <div class="popup-content">
               <strong style="font-size:14px;">${name}</strong><br>
@@ -481,7 +493,12 @@
 
               ${googleAvis ? `<a href="${googleAvis}" class="google-btn" target="_blank">Voir les avis</a>` : ``}
 
-              <div class="popup-buttons">
+              <hr style="margin:8px 0;">
+              <b>👤 Directeur :</b> ${prenom} ${nom}<br>
+              <b>📧 Mail :</b> ${contactMail}<br>
+              <b>📞 Téléphone :</b> ${phone}<br>
+
+              <div class="popup-buttons"">
                 <button class="popup-btn btn-dir" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}', '_blank')">Itinéraire</button>
                 <button class="popup-btn btn-contact" onclick="alert('📞 Contact direction : information à insérer')">Contact</button>
               </div>
