@@ -256,7 +256,7 @@
 
         let color = "#2e7d32"; // intégrée par défaut
 
-        const typeNormalized = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const typeNormalized = t.normalize("NFD").replace(/[̀-ͯ]/g, "");
         console.log('Type normalisé (sans accents):', typeNormalized);
 
         if (typeNormalized.includes("franchise")) {
@@ -402,8 +402,7 @@
           }
 
           agenciesData.push({
-            lat,
-            lng,
+            lat, lng,
             name: f["AGENCE "] || f["AGENCE"] || "Sans nom",
             address: f["ADRESSE-OK"] || "",
             type: f["TYPE AGENCE"] || "",
@@ -412,6 +411,7 @@
             googleNote: f["note_google"] || null,
             directionMail: f["DIRECTION D'AGENCE"] || "",
             phone: f["NUMERO DEMECO.FR"] || ""
+          
           });
         }
 
@@ -464,18 +464,7 @@
 
         let done = 0;
         for (const agency of agenciesData) {
-          const {
-            lat,
-            lng,
-            name,
-            address,
-            type,
-            type2,
-            googleAvis,
-            googleNote,
-            directionMail,
-            phone
-          } = agency;
+          const { lat, lng, name, address, type, type2, googleAvis, googleNote } = agency;
 
           let noteStyle = "";
           if (googleNote) {
@@ -485,33 +474,13 @@
             else noteStyle = "color:#e53935;font-weight:bold;";
           }
 
-          // Extraction prénom / nom à partir du mail
+          const contactMail = agency.directionMail || "";
+          const phone = agency.phone || "";
           let prenom = "", nom = "";
-          if (directionMail && directionMail.includes('@')) {
-            const parts = directionMail.split('@')[0].split('.');
-            if (parts[0]) prenom = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-            if (parts[1]) nom = parts[1].toUpperCase();
-          }
-
-          let contactBlock = "";
-          if (directionMail || phone) {
-            contactBlock += '<hr style="margin:8px 0;">';
-            if (prenom || nom) {
-              contactBlock += `<b>👤 Directeur :</b> ${prenom} ${nom}<br>`;
-            }
-            if (directionMail) {
-              contactBlock += `<b>📧 Mail :</b> ${directionMail}<br>`;
-            }
-            if (phone) {
-              contactBlock += `<b>📞 Téléphone :</b> ${phone}<br>`;
-            }
-          }
-
-          let contactButtonHtml = "";
-          if (directionMail) {
-            contactButtonHtml = `<button class="popup-btn btn-contact" onclick="window.location.href='mailto:${directionMail}'">Contact</button>`;
-          } else {
-            contactButtonHtml = `<button class="popup-btn btn-contact" disabled>Contact</button>`;
+          if (contactMail.includes('@')) {
+            const parts = contactMail.split('@')[0].split('.');
+            prenom = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : "";
+            nom = parts[1] ? parts[1].toUpperCase() : "";
           }
 
           const popupHTML = `
@@ -524,11 +493,14 @@
 
               ${googleAvis ? `<a href="${googleAvis}" class="google-btn" target="_blank">Voir les avis</a>` : ``}
 
-              ${contactBlock}
+              <hr style="margin:8px 0;">
+              <b>👤 Directeur :</b> ${prenom} ${nom}<br>
+              <b>📧 Mail :</b> ${contactMail}<br>
+              <b>📞 Téléphone :</b> ${phone}<br>
 
               <div class="popup-buttons">
                 <button class="popup-btn btn-dir" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}', '_blank')">Itinéraire</button>
-                ${contactButtonHtml}
+                ${contactMail ? `<button class="popup-btn btn-contact" onclick="window.location.href='mailto:${contactMail}'">Contact</button>` : `<button class="popup-btn btn-contact" disabled>Contact</button>`}
               </div>
             </div>
           `;
@@ -595,7 +567,7 @@
         return (t || "")
           .toLowerCase()
           .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "");
+          .replace(/[̀-ͯ]/g, "");
       }
 
       function filterMarkers(type) {
