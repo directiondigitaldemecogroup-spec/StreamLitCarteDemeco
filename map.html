@@ -5,21 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Carte interactive Hexvia - Départements</title>
     
-    <!-- Leaflet CSS et JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
     
     <style>
         /* ===== BASE ===== */
         html, body {
             margin: 0;
+            padding: 0;
             height: 100%;
+            width: 100%;
             font-family: system-ui, sans-serif;
+            overflow: hidden;
         }
 
         #map {
-            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
             width: 100%;
+            z-index: 1;
         }
 
         /* ===== LOGO ===== */
@@ -114,6 +122,7 @@
             border: 1px solid #aaa;
             font-size: 14px;
             background: #fff;
+            box-sizing: border-box;
         }
 
         .results-list {
@@ -346,6 +355,11 @@
         </div>
     </div>
 
+    <!-- Leaflet JS - IMPORTANT: charger AVANT le script principal -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
     <!-- ===== JAVASCRIPT ===== -->
     <script>
         // =====================================================
@@ -364,23 +378,57 @@
         // INITIALISATION
         // =====================================================
         
-        window.addEventListener('load', function() {
+        // Attendre que Leaflet et le DOM soient chargés
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM chargé, initialisation de la carte...');
+            
+            // Vérifier que Leaflet est bien chargé
+            if (typeof L === 'undefined') {
+                console.error('Leaflet n\'est pas chargé !');
+                alert('Erreur: Leaflet n\'a pas pu être chargé');
+                return;
+            }
+            
             initMap();
         });
 
         function initMap() {
-            // Initialiser la carte Leaflet
-            map = L.map('map').setView([46.5, 2.5], 6);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
+            try {
+                console.log('Initialisation de la carte Leaflet...');
+                
+                // Initialiser la carte Leaflet
+                map = L.map('map', {
+                    center: [46.5, 2.5],
+                    zoom: 6,
+                    zoomControl: true
+                });
+                
+                console.log('Carte créée:', map);
+                
+                // Ajouter les tuiles
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(map);
+                
+                console.log('Tuiles ajoutées');
 
-            // Initialiser la recherche
-            initSearch();
+                // Forcer le recalcul de la taille de la carte
+                setTimeout(() => {
+                    map.invalidateSize();
+                    console.log('Taille de la carte recalculée');
+                }, 100);
 
-            // Lancer le chargement des données
-            main();
+                // Initialiser la recherche
+                initSearch();
+
+                // Lancer le chargement des données
+                main();
+                
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation de la carte:', error);
+                alert('Erreur lors de l\'initialisation de la carte: ' + error.message);
+            }
         }
 
         // =====================================================
@@ -389,21 +437,15 @@
         
         function buildIcon(type, googleNote) {
             const t = (type || '').toLowerCase().trim();
-            console.log('Type reçu:', type, '| Après traitement:', t);
             
             let color = "#2e7d32"; // Intégrée par défaut
             
             const typeNormalized = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            console.log('Type normalisé (sans accents):', typeNormalized);
             
             if (typeNormalized.includes("franchise")) {
                 color = "#1565c0";
-                console.log('→ Couleur BLEUE (Franchisée)');
             } else if (typeNormalized.includes("demeseul")) {
                 color = "#424242";
-                console.log('→ Couleur GRISE (Demeseul)');
-            } else {
-                console.log('→ Couleur VERTE (Intégrée)');
             }
             
             const halo = googleNote ? "box-shadow:0 0 8px rgba(255,215,0,0.9);" : "";
@@ -532,155 +574,161 @@
             const progress = document.getElementById('progress');
             const bar = document.getElementById('progressBarInner');
 
-            // ÉTAPE 1 : Charger les départements (30%)
-            progress.textContent = "Chargement des départements...";
-            const geojson = await loadDepartmentsGeoJSON();
-            bar.style.width = "30%";
+            try {
+                // ÉTAPE 1 : Charger les départements (30%)
+                progress.textContent = "Chargement des départements...";
+                const geojson = await loadDepartmentsGeoJSON();
+                bar.style.width = "30%";
 
-            if (!geojson) {
-                alert("Impossible de charger les départements français");
-                return;
-            }
-
-            // ÉTAPE 2 : Charger les agences (60%)
-            progress.textContent = "Chargement des agences...";
-            const records = await fetchAllRecords();
-            bar.style.width = "60%";
-
-            // Compter les agences par département
-            const deptCount = {};
-            const agenciesData = [];
-
-            for (const rec of records) {
-                const f = rec.fields || {};
-                const lat = parseFloat(f["Latitude"]);
-                const lng = parseFloat(f["Longitude"]);
-
-                if (isNaN(lat) || isNaN(lng)) continue;
-
-                const dept = findDepartment(lat, lng, geojson);
-                if (dept) {
-                    deptCount[dept] = (deptCount[dept] || 0) + 1;
+                if (!geojson) {
+                    alert("Impossible de charger les départements français");
+                    return;
                 }
 
-                agenciesData.push({
-                    lat,
-                    lng,
-                    name: f["AGENCE "] || f["AGENCE"] || "Sans nom",
-                    address: f["ADRESSE-OK"] || "",
-                    type: f["TYPE AGENCE"] || "",
-                    type2: f["TYPE 2"] || "",
-                    googleAvis: f["URL Avis Google"] || null,
-                    googleNote: f["note_google"] || null
-                });
-            }
+                // ÉTAPE 2 : Charger les agences (60%)
+                progress.textContent = "Chargement des agences...";
+                const records = await fetchAllRecords();
+                bar.style.width = "60%";
 
-            // ÉTAPE 3 : Afficher les départements (80%)
-            progress.textContent = "Affichage des départements...";
-            const maxCount = Math.max(...Object.values(deptCount), 1);
+                // Compter les agences par département
+                const deptCount = {};
+                const agenciesData = [];
 
-            departmentsLayer = L.geoJSON(geojson, {
-                style: function(feature) {
-                    const code = feature.properties.code;
-                    const count = deptCount[code] || 0;
-                    
-                    return {
-                        fillColor: getColorForCount(count, maxCount),
-                        fillOpacity: 0.6,
-                        color: '#666',
-                        weight: 1.5,
-                        opacity: 0.8
-                    };
-                },
-                onEachFeature: function(feature, layer) {
-                    const code = feature.properties.code;
-                    const nom = feature.properties.nom;
-                    const count = deptCount[code] || 0;
+                for (const rec of records) {
+                    const f = rec.fields || {};
+                    const lat = parseFloat(f["Latitude"]);
+                    const lng = parseFloat(f["Longitude"]);
 
-                    layer.bindTooltip(
-                        `<div class="dept-tooltip">
-                            <b>${nom} (${code})</b><br>
-                            ${count} agence${count !== 1 ? 's' : ''}
-                        </div>`,
-                        {
-                            permanent: false,
-                            direction: 'center',
-                            className: 'dept-tooltip'
-                        }
-                    );
+                    if (isNaN(lat) || isNaN(lng)) continue;
 
-                    layer.on({
-                        mouseover: function(e) {
-                            const l = e.target;
-                            l.setStyle({
-                                weight: 3,
-                                fillOpacity: 0.8
-                            });
-                        },
-                        mouseout: function(e) {
-                            departmentsLayer.resetStyle(e.target);
-                        }
+                    const dept = findDepartment(lat, lng, geojson);
+                    if (dept) {
+                        deptCount[dept] = (deptCount[dept] || 0) + 1;
+                    }
+
+                    agenciesData.push({
+                        lat,
+                        lng,
+                        name: f["AGENCE "] || f["AGENCE"] || "Sans nom",
+                        address: f["ADRESSE-OK"] || "",
+                        type: f["TYPE AGENCE"] || "",
+                        type2: f["TYPE 2"] || "",
+                        googleAvis: f["URL Avis Google"] || null,
+                        googleNote: f["note_google"] || null
                     });
                 }
-            }).addTo(map);
 
-            bar.style.width = "80%";
+                // ÉTAPE 3 : Afficher les départements (80%)
+                progress.textContent = "Affichage des départements...";
+                const maxCount = Math.max(...Object.values(deptCount), 1);
 
-            // ÉTAPE 4 : Ajouter les marqueurs (100%)
-            progress.textContent = "Ajout des agences...";
-            let done = 0;
+                departmentsLayer = L.geoJSON(geojson, {
+                    style: function(feature) {
+                        const code = feature.properties.code;
+                        const count = deptCount[code] || 0;
+                        
+                        return {
+                            fillColor: getColorForCount(count, maxCount),
+                            fillOpacity: 0.6,
+                            color: '#666',
+                            weight: 1.5,
+                            opacity: 0.8
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const code = feature.properties.code;
+                        const nom = feature.properties.nom;
+                        const count = deptCount[code] || 0;
 
-            for (const agency of agenciesData) {
-                const { lat, lng, name, address, type, type2, googleAvis, googleNote } = agency;
+                        layer.bindTooltip(
+                            `<div class="dept-tooltip">
+                                <b>${nom} (${code})</b><br>
+                                ${count} agence${count !== 1 ? 's' : ''}
+                            </div>`,
+                            {
+                                permanent: false,
+                                direction: 'center',
+                                className: 'dept-tooltip'
+                            }
+                        );
 
-                let noteStyle = "";
-                if (googleNote) {
-                    const n = parseFloat(googleNote);
-                    if (n >= 4) {
-                        noteStyle = "color:#2e7d32; font-weight:bold;";
-                    } else if (n >= 3) {
-                        noteStyle = "color:#ff9800; font-weight:bold;";
-                    } else {
-                        noteStyle = "color:#e53935; font-weight:bold;";
+                        layer.on({
+                            mouseover: function(e) {
+                                const l = e.target;
+                                l.setStyle({
+                                    weight: 3,
+                                    fillOpacity: 0.8
+                                });
+                            },
+                            mouseout: function(e) {
+                                departmentsLayer.resetStyle(e.target);
+                            }
+                        });
                     }
+                }).addTo(map);
+
+                bar.style.width = "80%";
+
+                // ÉTAPE 4 : Ajouter les marqueurs (100%)
+                progress.textContent = "Ajout des agences...";
+                let done = 0;
+
+                for (const agency of agenciesData) {
+                    const { lat, lng, name, address, type, type2, googleAvis, googleNote } = agency;
+
+                    let noteStyle = "";
+                    if (googleNote) {
+                        const n = parseFloat(googleNote);
+                        if (n >= 4) {
+                            noteStyle = "color:#2e7d32; font-weight:bold;";
+                        } else if (n >= 3) {
+                            noteStyle = "color:#ff9800; font-weight:bold;";
+                        } else {
+                            noteStyle = "color:#e53935; font-weight:bold;";
+                        }
+                    }
+
+                    const popupHTML = `
+                        <div class="popup-content">
+                            <strong style="font-size:14px;">${name}</strong><br>
+                            🏢 <em>${type2 || type}</em><br>
+                            📍 ${address}<br>
+                            ${googleNote ? `<div style="${noteStyle}">⭐ ${googleNote}/5</div>` : ''}
+                            ${googleAvis ? `<a href="${googleAvis}" class="google-btn" target="_blank">Voir les avis</a>` : ''}
+                            <div class="popup-buttons">
+                                <button class="popup-btn btn-dir" 
+                                    onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}', '_blank')">
+                                    Itinéraire
+                                </button>
+                                <button class="popup-btn btn-contact">Contact</button>
+                            </div>
+                        </div>
+                    `;
+
+                    const marker = L.marker([lat, lng], {
+                        icon: buildIcon(type, googleNote)
+                    })
+                    .addTo(map)
+                    .bindPopup(popupHTML);
+
+                    markers.push({ name, type, type2, marker });
+
+                    done++;
+                    const pct = 80 + Math.round((done / agenciesData.length) * 20);
+                    bar.style.width = pct + "%";
                 }
 
-                const popupHTML = `
-                    <div class="popup-content">
-                        <strong style="font-size:14px;">${name}</strong><br>
-                        🏢 <em>${type2 || type}</em><br>
-                        📍 ${address}<br>
-                        ${googleNote ? `<div style="${noteStyle}">⭐ ${googleNote}/5</div>` : ''}
-                        ${googleAvis ? `<a href="${googleAvis}" class="google-btn" target="_blank">Voir les avis</a>` : ''}
-                        <div class="popup-buttons">
-                            <button class="popup-btn btn-dir" 
-                                onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}', '_blank')">
-                                Itinéraire
-                            </button>
-                            <button class="popup-btn btn-contact">Contact</button>
-                        </div>
-                    </div>
-                `;
+                // Finaliser le chargement
+                progress.textContent = "100%";
+                bar.style.width = "100%";
 
-                const marker = L.marker([lat, lng], {
-                    icon: buildIcon(type, googleNote)
-                })
-                .addTo(map)
-                .bindPopup(popupHTML);
-
-                markers.push({ name, type, type2, marker });
-
-                done++;
-                const pct = 80 + Math.round((done / agenciesData.length) * 20);
-                bar.style.width = pct + "%";
+                setTimeout(() => splash.style.opacity = 0, 500);
+                setTimeout(() => splash.remove(), 1200);
+                
+            } catch (error) {
+                console.error('Erreur dans main():', error);
+                alert('Erreur lors du chargement des données: ' + error.message);
             }
-
-            // Finaliser le chargement
-            progress.textContent = "100%";
-            bar.style.width = "100%";
-
-            setTimeout(() => splash.style.opacity = 0, 500);
-            setTimeout(() => splash.remove(), 1200);
         }
 
         // =====================================================
