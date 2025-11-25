@@ -197,6 +197,9 @@
       const BASE_ID = 'app5DoZKkIuqd6Quo';
       const TABLE_ID = 'tblcLGQDcypZPFbZA';
 
+      // CSV des avis (GitHub RAW)
+      const REVIEWS_CSV_URL = 'https://raw.githubusercontent.com/directiondigitaldemecogroup-spec/StreamLitCarteDemeco/refs/heads/main/avis.csv';
+
       /* Variables globales */
       let map;
       let markers = [];
@@ -219,15 +222,11 @@
 
       /* ---- MARKERS MODERNES + HALO PREMIUM ---- */
       function buildIcon(type, googleNote) {
-        const t = (type || '').toLowerCase();
         const t = (type || '').toLowerCase().trim();
         
         // DÉBOGAGE - Afficher dans la console
         console.log('Type reçu:', type, '| Après traitement:', t);
 
-        let color = "#2e7d32"; // intégrée
-        if (t.includes("franchise")) color = "#1565c0";
-        if (t.includes("demeseul")) color = "#424242";
         let color = "#2e7d32"; // intégrée par défaut
         
         // Détection plus robuste avec normalisation des accents
@@ -274,6 +273,54 @@
         } while (offset);
 
         return all;
+      }
+
+      /* Charger le CSV des avis (GitHub) */
+      async function loadReviews() {
+        try {
+          const res = await fetch(REVIEWS_CSV_URL);
+          if (!res.ok) {
+            console.error('Erreur chargement avis.csv', res.status);
+            return {};
+          }
+          const text = await res.text();
+          const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+          if (lines.length < 2) return {};
+
+          const headerLine = lines[0];
+          const sep = headerLine.includes(';') ? ';' : ',';
+          const headers = headerLine.split(sep).map(h => h.trim());
+
+          const idxAgence      = headers.indexOf('AGENCE');
+          const idxNoteGoogle  = headers.indexOf('NOTE GOOGLE');
+          const idxAvisGoogle  = headers.indexOf('AVIS GOOGLE');
+          const idxNoteAV      = headers.indexOf('NOTE AV');
+          const idxAvisAV      = headers.indexOf('AVIS AV');
+
+          const reviews = {};
+
+          for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(sep);
+            if (idxAgence < 0 || !cols[idxAgence]) continue;
+
+            const agence = cols[idxAgence].trim();
+            if (!agence) continue;
+
+            reviews[agence] = {
+              noteGoogle: idxNoteGoogle >= 0 ? (cols[idxNoteGoogle] || '').trim() : '',
+              avisGoogle: idxAvisGoogle >= 0 ? (cols[idxAvisGoogle] || '').trim() : '',
+              noteAV:     idxNoteAV     >= 0 ? (cols[idxNoteAV]     || '').trim() : '',
+              avisAV:     idxAvisAV     >= 0 ? (cols[idxAvisAV]     || '').trim() : ''
+            };
+          }
+
+          console.log('Avis chargés :', reviews);
+          return reviews;
+
+        } catch (e) {
+          console.error('Exception lors du chargement des avis :', e);
+          return {};
+        }
       }
 
       /* Charger GeoJSON des départements français */
@@ -347,6 +394,11 @@
         const progress = document.getElementById('progress');
         const bar = document.getElementById('progressBarInner');
 
+        // Étape 0: Charger les avis
+        progress.textContent = "Chargement des avis...";
+        const reviews = await loadReviews();
+        bar.style.width = "15%";
+
         // Étape 1: Charger les départements (30%)
         progress.textContent = "Chargement des départements...";
         const geojson = await loadDepartmentsGeoJSON();
@@ -379,8 +431,9 @@
           }
 
           agenciesData.push({
-            lat, lng,
-            name: f["AGENCE "] || f["AGENCE"] || "Sans nom",
+            lat,
+            lng,
+            name: f["AGENCE"] || "Sans nom",
             address: f["ADRESSE-OK"] || "",
             type: f["TYPE AGENCE"] || "",
             type2: f["TYPE 2"] || "",
@@ -441,13 +494,39 @@
         for (const agency of agenciesData) {
           const { lat, lng, name, address, type, type2, googleAvis, googleNote } = agency;
 
-          /* Couleur de Note */
+          // Récupérer les avis depuis le CSV (si disponibles)
+          const rev = reviews[name] || {};
+          let displayGoogleNote = rev.noteGoogle || (googleNote || "");
+          let displayGoogleAvis = rev.avisGoogle || "";
+          let displayNoteAV     = rev.noteAV     || "";
+          let displayAvisAV     = rev.avisAV     || "";
+
+          // Style de la note Google
           let noteStyle = "";
-          if (googleNote) {
-            const n = parseFloat(googleNote);
-            if (n >= 4) noteStyle = "color:#2e7d32;font-weight:bold;";
-            else if (n >= 3) noteStyle = "color:#ff9800;font-weight:bold;";
-            else noteStyle = "color:#e53935;font-weight:bold;";
+          if (displayGoogleNote) {
+            const n = parseFloat(String(displayGoogleNote).replace(',', '.'));
+            if (!isNaN(n)) {
+              if (n >= 4) noteStyle = "color:#2e7d32;font-weight:bold;";
+              else if (n >= 3) noteStyle = "color:#ff9800;font-weight:bold;";
+              else noteStyle = "color:#e53935;font-weight:bold;";
+            }
+          }
+
+          // Construction du bloc HTML des avis
+          let ratingHTML = "";
+          if (displayGoogleNote) {
+            ratingHTML += `<div style="${noteStyle}">⭐ Google : ${displayGoogleNote}/5`;
+            if (displayGoogleAvis) {
+              ratingHTML += ` (${displayGoogleAvis} avis)`;
+            }
+            ratingHTML += `</div>`;
+          }
+          if (displayNoteAV) {
+            ratingHTML += `<div style="margin-top:4px;${noteStyle}">🟣 AV : ${displayNoteAV}/5`;
+            if (displayAvisAV) {
+              ratingHTML += ` (${displayAvisAV} avis)`;
+            }
+            ratingHTML += `</div>`;
           }
 
           /* Popup HTML */
@@ -455,9 +534,9 @@
             <div class="popup-content">
               <strong style="font-size:14px;">${name}</strong><br>
               🏢 <em>${type2 || type}</em><br>
-              📍 ${address}<br>
+              📍 ${address}<br><br>
 
-              ${googleNote ? `<div style="${noteStyle}">⭐ ${googleNote}/5</div>` : ``}
+              ${ratingHTML}
 
               ${googleAvis ? `<a href="${googleAvis}" class="google-btn" target="_blank">Voir les avis</a>` : ``}
 
@@ -470,7 +549,7 @@
 
           /* MARQUEUR */
           const marker = L.marker([lat, lng], {
-            icon: buildIcon(type, googleNote)
+            icon: buildIcon(type, displayGoogleNote)
           })
           .addTo(map)
           .bindPopup(popupHTML);
@@ -528,16 +607,3 @@
     </script>
   </body>
 </html>
-```
-
-**Comment utiliser ce code :**
-
-1. **Ouvrez le fichier HTML** dans votre navigateur
-2. **Ouvrez la console** (F12 ou clic droit → Inspecter → Console)
-3. **Regardez les messages** qui s'affichent pour chaque agence
-
-Vous verrez des messages comme :
-```
-Type reçu: Intégrée | Après traitement: intégrée
-Type normalisé (sans accents): integree
-→ Couleur VERTE (Intégrée)
