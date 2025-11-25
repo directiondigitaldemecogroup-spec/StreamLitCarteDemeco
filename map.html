@@ -1,477 +1,521 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Carte interactive Hexvia - Départements</title>
-
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-  <style>
-    html, body { margin:0; height:100%; font-family:system-ui,sans-serif; }
-    #map { height:100vh; width:100%; }
-
-    /* LOGO */
-    .logo-container {
-      position: fixed; top: 15px; right: 15px;
-      background: rgba(255,255,255,0.9);
-      border-radius: 10px; padding: 6px 10px;
-      box-shadow: 0 0 6px rgba(0,0,0,0.25);
-      z-index: 9999;
-    }
-    .logo-container img { height: 60px; background:white; padding:6px; border-radius:8px; }
-
-    /* FILTRE */
-    .filter-container {
-      position: fixed; top: 95px; right: 15px; z-index:9999;
-      background: rgba(255,255,255,0.95);
-      padding:10px 12px; border-radius:8px;
-      box-shadow:0 0 8px rgba(0,0,0,0.25);
-    }
-    .filter-container select {
-      padding:6px 8px; width:180px;
-      font-size:14px; border-radius:6px; border:1px solid #aaa;
-    }
-
-    /* LEGENDE */
-    .legend {
-      position: fixed; bottom: 15px; left: 15px; z-index: 9999;
-      background: rgba(255,255,255,0.95);
-      padding:12px 14px; border-radius:8px;
-      box-shadow:0 0 10px rgba(0,0,0,0.25);
-      font-size:13px; line-height:1.8;
-    }
-    .legend-marker {
-      width:14px; height:14px; border-radius:50%;
-      border:2px solid white; display:inline-block; margin-right:6px;
-    }
-    .gradient-bar {
-      width:150px; height:20px;
-      background:linear-gradient(to right,#e8f5e9,#a5d6a7,#66bb6a,#43a047,#2e7d32);
-      border:1px solid #ccc; border-radius:4px;
-    }
-
-    /* RECHERCHE */
-    .search-container {
-      position: fixed; top:15px; left:15px; z-index:9999; width:260px;
-    }
-    .search-container input {
-      width:100%; padding:8px 10px; border-radius:6px;
-      border:1px solid #aaa; font-size:14px; background:#fff;
-    }
-    .results-list {
-      background:rgba(255,255,255,0.95);
-      max-height:200px; overflow-y:auto; border-radius:6px;
-      margin-top:4px; box-shadow:0 2px 6px rgba(0,0,0,0.25);
-      display:none;
-    }
-    .result-item { padding:6px 10px; cursor:pointer; border-bottom:1px solid #eee; }
-    .result-item:hover { background:#f5f5f5; }
-
-    /* POPUPS */
-    .popup-content { font-size:13px; line-height:1.5; }
-    .info-row { margin-top:4px; }
-
-    /* Splash */
-    #splash-screen {
-      position:fixed; top:0; left:0; width:100%; height:100%;
-      background:rgba(0,0,0,0.85); backdrop-filter:blur(4px);
-      display:flex; flex-direction:column; justify-content:center; align-items:center;
-      z-index:10000; transition:opacity .8s ease;
-    }
-    #progress { color:#fff; margin-top:10px; font-size:14px; }
-    .progress-bar {
-      width:250px; height:10px; background:rgba(255,255,255,0.2);
-      border-radius:5px; margin-top:10px; overflow:hidden;
-    }
-    .progress-bar-inner {
-      height:100%; width:0%; background:#4caf50; transition:width .3s ease;
-    }
-
-    .dept-tooltip {
-      background:rgba(0,0,0,0.8); color:white;
-      padding:6px 10px; border-radius:4px;
-      font-size:12px; font-weight:600;
-    }
-  </style>
-</head>
-
-<body>
-
-<div id="map"></div>
-
-<div class="search-container">
-  <input id="searchInput" type="text" placeholder="🔍 Rechercher une agence..." />
-  <div id="resultsList" class="results-list"></div>
-</div>
-
-<div class="logo-container">
-  <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" />
-</div>
-
-<div class="filter-container">
-  <select id="filterType">
-    <option value="all">📍 Toutes les agences</option>
-    <option value="integrée">🟢 Intégrées</option>
-    <option value="franchisée">🔵 Franchisées</option>
-    <option value="demeseul">⚫ Demeseul</option>
-  </select>
-</div>
-
-<div class="legend">
-  <b>Types d'agences</b><br>
-  <span class="legend-marker" style="background:#2e7d32"></span> Intégrée<br>
-  <span class="legend-marker" style="background:#1565c0"></span> Franchisée<br>
-  <span class="legend-marker" style="background:#424242"></span> Demeseul<br><br>
-
-  <b>Densité par département</b><br>
-  <div class="gradient-bar"></div>
-</div>
-
-<div id="splash-screen">
-  <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" />
-  <p style="color:white;">Chargement des données...</p>
-  <div id="progress">0%</div>
-  <div class="progress-bar"><div id="progressBarInner" class="progress-bar-inner"></div></div>
-</div>
-
-<script>
-/* ============================================================= */
-/* CONFIG */
-/* ============================================================= */
-
-const AIRTABLE_TOKEN = "patCagDMpXwNLGyQu.ed05d2b62289d165c562eed44a9e04b7f424b708179f288461a499caebe77ac4";  // ← mets ta vraie clé
-const BASE_ID = "app5DoZKkIuqd6Quo";
-const TABLE_ID = "tblcLGQDcypZPFbZA";
-
-const CSV_URL = "https://raw.githubusercontent.com/directiondigitaldemecogroup-spec/StreamLitCarteDemeco/refs/heads/main/avis.csv";
-
-let map;
-let markers = [];
-let departmentsLayer = null;
-let csvData = {}; // indexé par nom d’agence
-
-
-/* ============================================================= */
-/* CHARGER CSV */
-/* ============================================================= */
-async function loadCSV() {
-  const response = await fetch(CSV_URL);
-  const text = await response.text();
-
-  const rows = text.split("\n").map(r => r.trim());
-  const headers = rows[0].split(",");
-
-  const data = {};
-
-  for (let i=1; i<rows.length; i++) {
-    const cols = rows[i].split(",");
-    if (cols.length < headers.length) continue;
-
-    const row = {};
-    headers.forEach((h, idx) => row[h.trim()] = cols[idx]?.trim());
-
-    const agencyName = (row["AGENCE"] || "").trim();
-    if (agencyName) data[agencyName] = row;
-  }
-
-  return data;
-}
-
-
-/* ============================================================= */
-/* DETECT TYPE */
-/* ============================================================= */
-function detectType(type1, type2) {
-  const t = (type1 || type2 || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"");
-
-  if (t.includes("franch")) return "franchise";
-  if (t.includes("demeseul")) return "demeseul";
-  if (t.includes("integr")) return "integree";
-  return "unknown";
-}
-
-
-/* ============================================================= */
-/* ICON */
-/* ============================================================= */
-function buildIcon(type, googleNote) {
-  const detected = detectType(type, null);
-  let color = "#2e7d32";
-  if (detected === "franchise") color = "#1565c0";
-  if (detected === "demeseul") color = "#424242";
-
-  return L.divIcon({
-    html:`<div style="width:18px;height:18px;background:${color};
-      border-radius:50%;border:2px solid #fff;"></div>`,
-    className:"", iconSize:[20,20], iconAnchor:[10,10], popupAnchor:[0,-10]
-  });
-}
-
-
-/* ============================================================= */
-/* FILTRE */
-/* ============================================================= */
-function applyFilter() {
-  const value = document.getElementById("filterType").value.toLowerCase();
-
-  markers.forEach(m => {
-    const t = detectType(m.type, m.type2);
-    let show = false;
-
-    if (value==="all") show = true;
-    else if (value==="integrée" && t==="integree") show = true;
-    else if (value==="franchisée" && t==="franchise") show = true;
-    else if (value==="demeseul" && t==="demeseul") show = true;
-
-    if (show) map.addLayer(m.marker);
-    else map.removeLayer(m.marker);
-  });
-}
-
-
-/* ============================================================= */
-/* FETCH AIRTABLE */
-/* ============================================================= */
-async function fetchAllRecords() {
-  const baseUrl = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
-  let offset = null;
-  const all = [];
-
-  do {
-    const url = new URL(baseUrl);
-    url.searchParams.set("pageSize","100");
-    if (offset) url.searchParams.set("offset", offset);
-
-    const res = await fetch(url, {
-      headers:{ Authorization:`Bearer ${AIRTABLE_TOKEN}` }
-    });
-
-    const data = await res.json();
-    (data.records||[]).forEach(r => all.push(r));
-    offset = data.offset;
-
-  } while (offset);
-
-  return all;
-}
-
-
-/* ============================================================= */
-/* GEOJSON */
-/* ============================================================= */
-async function loadDepartmentsGeoJSON() {
-  const r = await fetch("https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson");
-  return await r.json();
-}
-
-function pointInPoly(point, vs) {
-  const x = point[0], y = point[1];
-  let inside = false;
-  for (let i=0,j=vs.length-1;i<vs.length;j=i++) {
-    const xi=vs[i][0], yi=vs[i][1];
-    const xj=vs[j][0], yj=vs[j][1];
-    const intersect = ((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi);
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
-
-function pointInPolygon(point, geometry) {
-  if (geometry.type==="Polygon")
-    return pointInPoly(point, geometry.coordinates[0]);
-
-  if (geometry.type==="MultiPolygon")
-    for (const poly of geometry.coordinates)
-      if (pointInPoly(point, poly[0])) return true;
-
-  return false;
-}
-
-
-/* ============================================================= */
-/* COULEUR DÉPARTEMENT */
-/* ============================================================= */
-function getColorForCount(count, max) {
-  if (count===0) return "#f5f5f5";
-  const r = count/max;
-  if (r<0.2) return "#e8f5e9";
-  if (r<0.4) return "#a5d6a7";
-  if (r<0.6) return "#66bb6a";
-  if (r<0.8) return "#43a047";
-  return "#2e7d32";
-}
-
-
-/* ============================================================= */
-/* MAIN */
-/* ============================================================= */
-window.addEventListener("load", main);
-
-async function main() {
-  const splash = document.getElementById("splash-screen");
-  const progress = document.getElementById("progress");
-  const bar = document.getElementById("progressBarInner");
-
-  /* 1. LOAD CSV */
-  progress.textContent="Chargement CSV...";
-  csvData = await loadCSV();
-  bar.style.width="15%";
-
-  /* 2. LOAD GEOJSON */
-  progress.textContent="Chargement départements...";
-  const geojson = await loadDepartmentsGeoJSON();
-  bar.style.width="30%";
-
-  /* 3. LOAD AIRTABLE */
-  progress.textContent="Chargement agences...";
-  const records = await fetchAllRecords();
-  bar.style.width="60%";
-
-  /* Count dept */
-  const deptCount = {};
-  const agenciesData = [];
-
-  for (const rec of records) {
-    const f = rec.fields || {};
-
-    const name = (f["AGENCE "]||"").trim();
-    const lat = parseFloat(f["Latitude"]);
-    const lng = parseFloat(f["Longitude"]);
-
-    if (isNaN(lat) || isNaN(lng)) continue;
-
-    const dept = geojson.features.find(feat =>
-      pointInPolygon([lng,lat], feat.geometry)
-    )?.properties.code;
-
-    if (dept) deptCount[dept]=(deptCount[dept]||0)+1;
-
-    const csvRow = csvData[name] || {};
-
-    agenciesData.push({
-      lat, lng,
-      name,
-      address: f["ADRESSE-OK"] || "",
-      type: f["TYPE AGENCE"] || "",
-      type2: f["TYPE 2"] || "",
-      googleNote: csvRow["NOTE GOOGLE"] || "",
-      googleAvis: csvRow["AVIS GOOGLE"] || "",
-      noteAV: csvRow["NOTE AV"] || "",
-      avisAV: csvRow["AVIS AV"] || ""
-    });
-  }
-
-  /* 4. afficher départements */
-  progress.textContent="Affichage départements...";
-  const max = Math.max(...Object.values(deptCount));
-
-  departmentsLayer = L.geoJSON(geojson,{
-    style: f=>{
-      const code=f.properties.code;
-      return {
-        fillColor:getColorForCount(deptCount[code]||0, max),
-        fillOpacity:.6, color:"#666", weight:1.2
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Carte interactive Hexvia - Départements</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        font-family: system-ui, sans-serif;
       }
-    }
-  }).addTo(map);
+      #map { height: 100vh; width: 100%; }
 
-  bar.style.width="80%";
+      /* LOGO */
+      .logo-container {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        padding: 6px 10px;
+        box-shadow: 0 0 6px rgba(0,0,0,0.25);
+        z-index: 9999;
+      }
+      .logo-container img { height: 60px; background:white; padding:6px; border-radius:8px; }
 
-  /* 5. MARKERS */
-  progress.textContent="Affichage agences...";
-  let done=0;
+      /* FILTRE */
+      .filter-container {
+        position: fixed;
+        top: 95px;
+        right: 15px;
+        background: rgba(255,255,255,0.95);
+        padding: 10px 12px;
+        border-radius: 8px;
+        box-shadow: 0 0 8px rgba(0,0,0,0.25);
+        z-index: 9999;
+      }
+      .filter-container select {
+        padding: 6px 8px;
+        font-size: 14px;
+        border-radius: 6px;
+        border: 1px solid #aaa;
+        width: 180px;
+      }
 
-  for (const a of agenciesData) {
+      /* LEGENDE */
+      .legend {
+        position: fixed;
+        bottom: 15px;
+        left: 15px;
+        z-index: 9999;
+        background: rgba(255,255,255,0.95);
+        padding: 12px 14px;
+        font-size: 13px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.25);
+        line-height: 1.8;
+        max-width: 250px;
+      }
 
-    const popupHTML = `
-      <div class="popup-content">
-        <strong style="font-size:15px">${a.name}</strong><br>
-        🏢 <em>${a.type2 || a.type}</em><br>
-        📍 ${a.address}<br>
+      .legend-marker {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid white;
+        display: inline-block;
+        margin-right: 6px;
+      }
 
-        <div class="info-row" style="margin-top:8px;">
-          ${a.googleNote ? `⭐ <b>Google :</b> ${a.googleNote} (${a.googleAvis} avis)<br>` : ""}
-          ${a.noteAV ? `⭐ <b>AV :</b> ${a.noteAV} (${a.avisAV} avis)<br>` : ""}
-        </div>
-      </div>
-    `;
+      .gradient-bar {
+        width: 150px;
+        height: 20px;
+        background: linear-gradient(to right, #e8f5e9, #a5d6a7, #66bb6a, #43a047, #2e7d32);
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
 
-    const marker = L.marker([a.lat,a.lng], {
-      icon: buildIcon(a.type, a.googleNote)
-    })
-    .addTo(map)
-    .bindPopup(popupHTML);
+      /* RECHERCHE */
+      .search-container {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 9999;
+        width: 260px;
+      }
+      .search-container input {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid #aaa;
+        font-size: 14px;
+        background:#fff;
+      }
+      .results-list {
+        background: rgba(255,255,255,0.95);
+        max-height: 200px;
+        overflow-y: auto;
+        border-radius: 6px;
+        margin-top: 4px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        display: none;
+      }
+      .result-item { padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+      .result-item:hover { background: #f5f5f5; }
 
-    markers.push(a);
-    markers[markers.length-1].marker = marker;
+      /* POPUPS */
+      .popup-content { color:#000; font-size:13px; line-height:1.4; width: 230px; }
+      .popup-buttons { display:flex; justify-content:space-between; margin-top:8px; gap:4px; }
+      .popup-btn {
+        flex:1; padding:6px 8px; border:none; border-radius:4px; font-size:12px; cursor:pointer;
+        font-weight:600; color:white; transition:transform .15s ease, background .3s;
+      }
+      .popup-btn:hover { transform: scale(1.05); }
+      .btn-dir { background:#1976d2; } .btn-dir:hover { background:#1565c0; }
+      .btn-contact { background:#4caf50; } .btn-contact:hover { background:#449d48; }
 
-    done++;
-    bar.style.width = (80 + (done/agenciesData.length)*20) + "%";
-  }
+      .google-btn {
+        display:inline-block; margin-top:6px; background:#1a73e8; color:#fff!important;
+        padding:5px 8px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px;
+      }
+      .google-btn:hover { background:#1669c1; }
 
-  progress.textContent="100%";
+      /* Splash */
+      #splash-screen {
+        position: fixed; top:0; left:0; width:100%; height:100%;
+        background: rgba(0,0,0,0.85);
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        z-index: 10000; transition: opacity 0.8s ease; backdrop-filter: blur(4px);
+      }
+      #splash-screen img { width: 160px; margin-bottom: 25px; }
+      #progress { margin-top: 8px; font-size: 15px; color: #ccc; font-weight: 600; }
+      .progress-bar {
+        width: 250px; height: 10px; background: rgba(255,255,255,0.2);
+        border-radius: 5px; margin-top: 12px; overflow: hidden; box-shadow: inset 0 0 5px rgba(0,0,0,0.25);
+      }
+      .progress-bar-inner { height: 100%; width: 0%; background: #4caf50; transition: width 0.3s ease; }
 
-  /* filtre */
-  document.getElementById("filterType").addEventListener("change", applyFilter);
+      .dept-tooltip {
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
 
-  setTimeout(()=> splash.style.opacity=0, 800);
-  setTimeout(()=> splash.remove(), 1500);
-}
+  <body>
+
+    <div id="map"></div>
+
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="🔍 Rechercher une agence..." />
+      <div class="results-list" id="resultsList"></div>
+    </div>
+
+    <div class="logo-container">
+      <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Logo Hexvia" />
+    </div>
+
+    <!-- FILTRE -->
+    <div class="filter-container">
+      <select id="filterType">
+        <option value="all">📍 Toutes les agences</option>
+        <option value="integrée">🟢 Intégrées</option>
+        <option value="franchisée">🔵 Franchisées</option>
+        <option value="demeseul">⚫ Demeseul</option>
+      </select>
+    </div>
+
+    <!-- LÉGENDE -->
+    <div class="legend">
+      <b>Types d'agences</b><br/>
+      <span class="legend-marker" style="background:#2e7d32;"></span> Intégrée<br>
+      <span class="legend-marker" style="background:#1565c0;"></span> Franchisée<br>
+      <span class="legend-marker" style="background:#424242;"></span> Demeseul<br>
+
+      <br><b>Densité par département</b>
+      <div class="gradient-bar"></div>
+    </div>
+
+    <!-- Splash -->
+    <div id="splash-screen">
+      <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Hexvia" />
+      <p style="color:#fff;margin:0 0 8px;">Chargement des données...</p>
+      <div id="progress">0%</div>
+      <div class="progress-bar"><div class="progress-bar-inner" id="progressBarInner"></div></div>
+    </div>
+
+    <script>
+      /* ------------------------------------------------------- */
+      /* CONFIG                                                  */
+      /* ------------------------------------------------------- */
+
+      const AIRTABLE_TOKEN = "patCagDMpXwNLGyQu.ed05d2b62289d165c562eed44a9e04b7f424b708179f288461a499caebe77ac4";  /* Remets TA clé ici */
+      const BASE_ID = "app5DoZKkIuqd6Quo";
+      const TABLE_ID = "tblcLGQDcypZPFbZA";
+
+      let map;
+      let markers = [];
+      let departmentsLayer = null;
 
 
-/* ============================================================= */
-/* SEARCH */
-/* ============================================================= */
-function initSearch() {
-  const input = document.getElementById("searchInput");
-  const list = document.getElementById("resultsList");
+      /* ------------------------------------------------------- */
+      /* INIT MAP                                                */
+      /* ------------------------------------------------------- */
+      window.addEventListener('load', initMap);
 
-  input.addEventListener("input", ()=>{
-    const q = input.value.trim().toLowerCase();
-    list.innerHTML="";
-    if (!q) return list.style.display="none";
+      function initMap() {
+        map = L.map('map').setView([46.5, 2.5], 6);
 
-    const filtered = markers.filter(m =>
-      m.name.toLowerCase().includes(q) ||
-      m.type.toLowerCase().includes(q) ||
-      (m.type2 && m.type2.toLowerCase().includes(q))
-    );
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-    if (!filtered.length) {
-      list.innerHTML = "<div class='result-item'>Aucune agence trouvée</div>";
-      return list.style.display="block";
-    }
-
-    filtered.forEach(m=>{
-      const item=document.createElement("div");
-      item.className="result-item";
-      item.innerHTML=`<b>${m.name}</b><br><small>${m.type2 || m.type}</small>`;
-      item.onclick=()=>{
-        map.setView([m.lat,m.lng],14);
-        m.marker.openPopup();
-        list.style.display="none";
-      };
-      list.appendChild(item);
-    });
-
-    list.style.display="block";
-  });
-}
+        initSearch();
+        main();
+      }
 
 
-/* ============================================================= */
-/* INIT MAP */
-/* ============================================================= */
-map = L.map("map").setView([46.5,2.5],6);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap"}).addTo(map);
-initSearch();
+      /* ------------------------------------------------------- */
+      /* DETECTION FIABLE DU TYPE D’AGENCE                      */
+      /* ------------------------------------------------------- */
 
-</script>
+      function detectType(type1, type2) {
+        const t = (type1 || type2 || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
 
-</body>
+        if (t.includes("franch")) return "franchise";
+        if (t.includes("demeseul")) return "demeseul";
+        if (t.includes("integr")) return "integree";
+
+        return "unknown";
+      }
+
+
+      /* ------------------------------------------------------- */
+      /* ICÔNES MARKERS                                          */
+      /* ------------------------------------------------------- */
+
+      function buildIcon(type, googleNote) {
+        const detected = detectType(type, null);
+
+        let color = "#2e7d32";
+        if (detected === "franchise") color = "#1565c0";
+        if (detected === "demeseul") color = "#424242";
+
+        const halo = googleNote ? "box-shadow:0 0 8px rgba(255,215,0,0.9);" : "";
+
+        return L.divIcon({
+          html: `<div style="width:18px;height:18px;background:${color};border-radius:50%;border:2px solid #fff;${halo}"></div>`,
+          className: "",
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+          popupAnchor: [0, -10],
+        });
+      }
+
+
+      /* ------------------------------------------------------- */
+      /* FILTRE AGENCES                                         */
+      /* ------------------------------------------------------- */
+
+      function applyFilter() {
+        const filterValue = document.getElementById("filterType").value.toLowerCase();
+
+        markers.forEach(m => {
+          const agencyType = detectType(m.type, m.type2);
+
+          let show = false;
+          if (filterValue === "all") show = true;
+          else if (filterValue === "integrée" && agencyType === "integree") show = true;
+          else if (filterValue === "franchisée" && agencyType === "franchise") show = true;
+          else if (filterValue === "demeseul" && agencyType === "demeseul") show = true;
+
+          if (show) {
+            if (!map.hasLayer(m.marker)) map.addLayer(m.marker);
+          } else {
+            if (map.hasLayer(m.marker)) map.removeLayer(m.marker);
+          }
+        });
+      }
+
+
+      /* ------------------------------------------------------- */
+      /* AIRTABLE FETCH                                          */
+      /* ------------------------------------------------------- */
+
+      async function fetchAllRecords() {
+        const baseUrl = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
+        let offset = null;
+        const all = [];
+
+        do {
+          const url = new URL(baseUrl);
+          url.searchParams.set("pageSize", "100");
+          if (offset) url.searchParams.set("offset", offset);
+
+          const res = await fetch(url, {
+            headers: { Authorization:`Bearer ${AIRTABLE_TOKEN}` }
+          });
+
+          const data = await res.json();
+          (data.records || []).forEach(r => all.push(r));
+          offset = data.offset;
+
+        } while (offset);
+
+        return all;
+      }
+
+
+      /* ------------------------------------------------------- */
+      /* GEOJSON DÉPARTEMENTS                                    */
+      /* ------------------------------------------------------- */
+
+      async function loadDepartmentsGeoJSON() {
+        const res = await fetch("https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson");
+        return await res.json();
+      }
+
+
+      /* ------------------------------------------------------- */
+      /* POINT DANS POLYGONE                                     */
+      /* ------------------------------------------------------- */
+
+      function pointInPolygon(point, geometry) {
+        if (geometry.type === 'Polygon')
+          return pointInPoly(point, geometry.coordinates[0]);
+
+        if (geometry.type === 'MultiPolygon') {
+          for (const poly of geometry.coordinates)
+            if (pointInPoly(point, poly[0])) return true;
+        }
+        return false;
+      }
+
+      function pointInPoly(point, vs) {
+        const x = point[0], y = point[1];
+        let inside = false;
+
+        for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+          const xi = vs[i][0], yi = vs[i][1];
+          const xj = vs[j][0], yj = vs[j][1];
+          const intersect = ((yi > y) !== (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+
+          if (intersect) inside = !inside;
+        }
+
+        return inside;
+      }
+
+
+      /* ------------------------------------------------------- */
+      /* COULEURS DÉPARTEMENTS                                   */
+      /* ------------------------------------------------------- */
+
+      function getColorForCount(count, maxCount) {
+        if (count === 0) return '#f5f5f5';
+        const ratio = count / maxCount;
+
+        if (ratio < 0.2) return '#e8f5e9';
+        if (ratio < 0.4) return '#a5d6a7';
+        if (ratio < 0.6) return '#66bb6a';
+        if (ratio < 0.8) return '#43a047';
+        return '#2e7d32';
+      }
+
+
+      /* ------------------------------------------------------- */
+      /* MAIN                                                    */
+      /* ------------------------------------------------------- */
+
+      async function main() {
+        const splash = document.getElementById("splash-screen");
+        const progress = document.getElementById("progress");
+        const bar = document.getElementById("progressBarInner");
+
+        progress.textContent = "Chargement des départements...";
+        const geojson = await loadDepartmentsGeoJSON();
+        bar.style.width = "30%";
+
+        progress.textContent = "Chargement des agences...";
+        const records = await fetchAllRecords();
+        bar.style.width = "60%";
+
+        const deptCount = {};
+        const agenciesData = [];
+
+        for (const rec of records) {
+          const f = rec.fields || {};
+          const lat = parseFloat(f["Latitude"]);
+          const lng = parseFloat(f["Longitude"]);
+
+          if (isNaN(lat) || isNaN(lng)) continue;
+
+          const dept = geojson.features.find(feat =>
+            pointInPolygon([lng, lat], feat.geometry)
+          )?.properties.code;
+
+          if (dept) deptCount[dept] = (deptCount[dept] || 0) + 1;
+
+          agenciesData.push({
+            lat, lng,
+            name: f["AGENCE "] || f["AGENCE"] || "Sans nom",
+            address: f["ADRESSE-OK"] || "",
+            type: f["TYPE AGENCE"] || "",
+            type2: f["TYPE 2"] || "",
+            googleAvis: f["URL Avis Google"] || null,
+            googleNote: f["note_google"] || null
+          });
+        }
+
+        /* Dessin des départements */
+        const maxCount = Math.max(...Object.values(deptCount));
+
+        departmentsLayer = L.geoJSON(geojson, {
+          style: feat => {
+            const code = feat.properties.code;
+            const count = deptCount[code] || 0;
+            return {
+              fillColor: getColorForCount(count, maxCount),
+              fillOpacity: 0.6,
+              color: '#666',
+              weight: 1.2
+            };
+          }
+        }).addTo(map);
+
+        bar.style.width = "80%";
+        progress.textContent = "Ajout des agences...";
+
+        /* Ajout des markers */
+        let done = 0;
+
+        for (const agency of agenciesData) {
+          const { lat, lng, name, address, type, type2, googleAvis, googleNote } = agency;
+
+          const popupHTML = `
+            <div class="popup-content">
+              <strong style="font-size:14px;">${name}</strong><br>
+              🏢 <em>${type2 || type}</em><br>
+              📍 ${address}<br>
+              ${googleNote ? `<div>⭐ ${googleNote}/5</div>` : ""}
+              ${googleAvis ? `<a class="google-btn" target="_blank" href="${googleAvis}">Voir les avis</a>` : ""}
+            </div>`;
+
+          const marker = L.marker([lat, lng], {
+            icon: buildIcon(type, googleNote)
+          })
+          .addTo(map)
+          .bindPopup(popupHTML);
+
+          markers.push({ name, type, type2, marker });
+
+          done++;
+          bar.style.width = 80 + Math.round((done / agenciesData.length) * 20) + "%";
+        }
+
+        progress.textContent = "100%";
+
+        /* Activation du filtre */
+        document.getElementById("filterType").addEventListener("change", applyFilter);
+
+        setTimeout(() => splash.style.opacity = 0, 500);
+        setTimeout(() => splash.remove(), 1200);
+      }
+
+
+      /* ------------------------------------------------------- */
+      /* RECHERCHE                                               */
+      /* ------------------------------------------------------- */
+
+      function initSearch() {
+        const input = document.getElementById("searchInput");
+        const list = document.getElementById("resultsList");
+
+        input.addEventListener("input", () => {
+          const q = input.value.trim().toLowerCase();
+          list.innerHTML = "";
+          if (!q) return (list.style.display = "none");
+
+          const filtered = markers.filter(m =>
+            m.name.toLowerCase().includes(q) ||
+            m.type.toLowerCase().includes(q) ||
+            (m.type2 && m.type2.toLowerCase().includes(q))
+          );
+
+          if (filtered.length === 0) {
+            list.innerHTML = "<div class='result-item'>Aucune agence trouvée</div>";
+            return (list.style.display = "block");
+          }
+
+          filtered.forEach(m => {
+            const item = document.createElement("div");
+            item.className = "result-item";
+            item.innerHTML = `<b>${m.name}</b><br><small>${m.type2 || m.type}</small>`;
+            item.onclick = () => {
+              map.setView(m.marker.getLatLng(), 14);
+              m.marker.openPopup();
+              list.style.display = "none";
+            };
+            list.appendChild(item);
+          });
+
+          list.style.display = "block";
+        });
+      }
+    </script>
+
+  </body>
 </html>
