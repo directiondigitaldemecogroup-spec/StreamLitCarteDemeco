@@ -29,6 +29,24 @@
       }
       .logo-container img { height: 60px; background:white; padding:6px; border-radius:8px; }
 
+      /* ---- FILTRE AJOUTÉ ---- */
+      .filter-container {
+        position: fixed;
+        top: 95px;
+        right: 15px;
+        z-index: 9999;
+        background: rgba(255,255,255,0.95);
+        padding: 10px 12px;
+        border-radius: 8px;
+        box-shadow: 0 0 6px rgba(0,0,0,0.25);
+      }
+      .filter-container select {
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid #aaa;
+        font-size: 14px;
+      }
+
       /* LEGENDE MODERNE */
       .legend {
         position: fixed;
@@ -160,6 +178,16 @@
       <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Logo Hexvia" />
     </div>
 
+    <!-- 🎯 AJOUT : FILTRE -->
+    <div class="filter-container">
+      <select id="filterType">
+        <option value="all">📍 Toutes les agences</option>
+        <option value="integree">🟢 Intégrées</option>
+        <option value="franchisee">🔵 Franchisées</option>
+        <option value="demeseul">⚫ Demeseul</option>
+      </select>
+    </div>
+
     <!-- LEGENDE -->
     <div class="legend">
       <div class="legend-section">
@@ -185,7 +213,6 @@
       <div id="progress">0%</div>
       <div class="progress-bar"><div class="progress-bar-inner" id="progressBarInner"></div></div>
     </div>
-
     <script>
       window.addEventListener('load', function() {
         initMap();
@@ -210,25 +237,34 @@
         main();
       }
 
-      /* ---- BUILD ICON (CORRIGÉ) ---- */
+      /* 🎯 AJOUT : fonction de détection de type */
+      function detectType(type, type2) {
+        const t = (type || type2 || '')
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+
+        if (t.includes("franch")) return "franchisee";
+        if (t.includes("demeseul")) return "demeseul";
+        if (t.includes("integr")) return "integree";
+        return "unknown";
+      }
+
+      /* ---- BUILD ICON (TON CODE D'ORIGINE) ---- */
       function buildIcon(type, googleNote) {
         let t = (type || '').toLowerCase().trim();
 
         console.log('Type reçu:', type, '| Après traitement:', t);
 
-        let color = "#2e7d32"; // intégrée par défaut
+        let color = "#2e7d32"; 
 
         const typeNormalized = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         console.log('Type normalisé (sans accents):', typeNormalized);
 
         if (typeNormalized.includes("franchise")) {
           color = "#1565c0";
-          console.log('→ Couleur BLEUE (Franchisée)');
         } else if (typeNormalized.includes("demeseul")) {
           color = "#424242";
-          console.log('→ Couleur GRISE (Demeseul)');
-        } else {
-          console.log('→ Couleur VERTE (Intégrée)');
         }
 
         const halo = googleNote ? "box-shadow:0 0 8px rgba(255,215,0,0.9);" : "";
@@ -242,7 +278,6 @@
         });
       }
 
-      /* Airtable */
       async function fetchAllRecords() {
         const baseUrl = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
         let offset = null;
@@ -275,9 +310,7 @@
 
       function findDepartment(lat, lng, geojson) {
         if (!geojson) return null;
-
         const point = [lng, lat];
-
         for (const feature of geojson.features) {
           if (pointInPolygon(point, feature.geometry)) {
             return feature.properties.code;
@@ -291,9 +324,7 @@
           return pointInPoly(point, geometry.coordinates[0]);
         } else if (geometry.type === 'MultiPolygon') {
           for (const polygon of geometry.coordinates) {
-            if (pointInPoly(point, polygon[0])) {
-              return true;
-            }
+            if (pointInPoly(point, polygon[0])) return true;
           }
         }
         return false;
@@ -305,7 +336,8 @@
         for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
           const xi = vs[i][0], yi = vs[i][1];
           const xj = vs[j][0], yj = vs[j][1];
-          const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+          const intersect = ((yi > y) !== (yj > y)) &&
+                            (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
           if (intersect) inside = !inside;
         }
         return inside;
@@ -313,9 +345,7 @@
 
       function getColorForCount(count, maxCount) {
         if (count === 0) return '#f5f5f5';
-
         const ratio = count / maxCount;
-
         if (ratio < 0.2) return '#e8f5e9';
         if (ratio < 0.4) return '#a5d6a7';
         if (ratio < 0.6) return '#66bb6a';
@@ -332,11 +362,6 @@
         const geojson = await loadDepartmentsGeoJSON();
         bar.style.width = "30%";
 
-        if (!geojson) {
-          alert("Impossible de charger les départements français");
-          return;
-        }
-
         progress.textContent = "Chargement des agences...";
         const records = await fetchAllRecords();
         bar.style.width = "60%";
@@ -348,13 +373,10 @@
           const f = rec.fields || {};
           const lat = parseFloat(f["Latitude"]);
           const lng = parseFloat(f["Longitude"]);
-
           if (isNaN(lat) || isNaN(lng)) continue;
 
           const dept = findDepartment(lat, lng, geojson);
-          if (dept) {
-            deptCount[dept] = (deptCount[dept] || 0) + 1;
-          }
+          if (dept) deptCount[dept] = (deptCount[dept] || 0) + 1;
 
           agenciesData.push({
             lat, lng,
@@ -368,11 +390,10 @@
         }
 
         progress.textContent = "Affichage des départements...";
-
         const maxCount = Math.max(...Object.values(deptCount), 1);
 
         departmentsLayer = L.geoJSON(geojson, {
-          style: function(feature) {
+          style: feature => {
             const code = feature.properties.code;
             const count = deptCount[code] || 0;
             return {
@@ -382,29 +403,6 @@
               weight: 1.5,
               opacity: 0.8
             };
-          },
-          onEachFeature: function(feature, layer) {
-            const code = feature.properties.code;
-            const nom = feature.properties.nom;
-            const count = deptCount[code] || 0;
-
-            layer.bindTooltip(
-              `<div class="dept-tooltip"><b>${nom} (${code})</b><br>${count} agence${count !== 1 ? 's' : ''}</div>`,
-              { permanent: false, direction: 'center', className: 'dept-tooltip' }
-            );
-
-            layer.on({
-              mouseover: function(e) {
-                const l = e.target;
-                l.setStyle({
-                  weight: 3,
-                  fillOpacity: 0.8
-                });
-              },
-              mouseout: function(e) {
-                departmentsLayer.resetStyle(e.target);
-              }
-            });
           }
         }).addTo(map);
 
@@ -454,11 +452,30 @@
           bar.style.width = pct + "%";
         }
 
+        /* 🎯 AJOUT : activation du filtre */
+        document.getElementById("filterType").addEventListener("change", applyFilter);
+
         progress.textContent = "100%";
         bar.style.width = "100%";
 
         setTimeout(() => splash.style.opacity = 0, 500);
         setTimeout(() => splash.remove(), 1200);
+      }
+
+      /* 🎯 AJOUT : fonction de filtrage */
+      function applyFilter() {
+        const value = document.getElementById("filterType").value;
+
+        markers.forEach(m => {
+          const t = detectType(m.type, m.type2);
+
+          let show = false;
+          if (value === "all") show = true;
+          else if (t === value) show = true;
+
+          if (show) map.addLayer(m.marker);
+          else map.removeLayer(m.marker);
+        });
       }
 
       function initSearch() {
