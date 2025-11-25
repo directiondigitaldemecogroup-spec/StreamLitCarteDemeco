@@ -280,4 +280,52 @@
 
               <div class="popup-buttons">
                 <button class="popup-btn btn-dir"
-                  onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}'
+                  onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}', '_blank')">
+                  Itinéraire
+                </button>
+                <button class="popup-btn btn-contact">Contact</button>
+              </div>
+            </div>
+          `;
+
+          const marker = L.marker([lat, lng], {
+            icon: buildIcon(f["TYPE AGENCE"])
+          }).addTo(map).bindPopup(popupHTML);
+
+          markers.push({ name, type: f["TYPE AGENCE"], type2: f["TYPE 2"], marker });
+        }
+      }
+
+      function initSearch() {
+        const input = document.getElementById("searchInput");
+        const list = document.getElementById("resultsList");
+
+        input.addEventListener("input", () => {
+          const q = input.value.toLowerCase();
+          list.innerHTML = "";
+          if (!q) { list.style.display = "none"; return; }
+
+          const results = markers.filter(m =>
+            m.name.toLowerCase().includes(q)
+          );
+
+          results.forEach(r => {
+            const el = document.createElement("div");
+            el.className = "result-item";
+            el.textContent = r.name;
+            el.onclick = () => {
+              map.setView(r.marker.getLatLng(), 13);
+              r.marker.openPopup();
+              list.style.display = "none";
+            };
+            list.appendChild(el);
+          });
+
+          list.style.display = "block";
+        });
+      }
+
+    </script>
+  </body>
+</html>
+
