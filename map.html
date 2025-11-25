@@ -1,124 +1,283 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Carte interactive Hexvia - Départements</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Carte interactive Hexvia - Départements</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <style>
-    html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
-    #map { height: 100vh; width: 100%; }
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        font-family: system-ui, sans-serif;
+      }
+      #map { height: 100vh; width: 100%; }
 
-    .logo-container { position: fixed; top: 15px; right: 15px; background: rgba(255,255,255,0.9); border-radius: 10px; padding: 6px 10px; box-shadow: 0 0 6px rgba(0,0,0,0.25); z-index: 9999; }
-    .logo-container img { height: 60px; background:white; padding:6px; border-radius:8px; }
+      .logo-container {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        padding: 6px 10px;
+        box-shadow: 0 0 6px rgba(0,0,0,0.25);
+        z-index: 9999;
+      }
+      .logo-container img { height: 60px; background:white; padding:6px; border-radius:8px; }
 
-    .legend { position: fixed; bottom: 15px; left: 15px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 12px 14px; font-size: 13px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.25); line-height: 1.8; max-width: 250px; }
-    .legend-marker { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; display: inline-block; margin-right: 6px; }
+      .legend {
+        position: fixed;
+        bottom: 15px;
+        left: 15px;
+        z-index: 9999;
+        background: rgba(255,255,255,0.95);
+        padding: 12px 14px;
+        font-size: 13px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.25);
+        line-height: 1.8;
+        max-width: 250px;
+      }
+      .legend-marker {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid white;
+        display: inline-block;
+        margin-right: 6px;
+      }
 
-    .search-container { position: fixed; top: 15px; left: 15px; z-index: 9999; width: 260px; }
-    .search-container input { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #aaa; font-size: 14px; background:#fff; }
+      .search-container {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 9999;
+        width: 260px;
+      }
+      .search-container input {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid #aaa;
+        font-size: 14px;
+        background:#fff;
+      }
 
-    .results-list { background: rgba(255,255,255,0.95); max-height: 200px; overflow-y: auto; border-radius: 6px; margin-top: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); display: none; }
-    .result-item { padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee; }
-    .result-item:hover { background: #f5f5f5; }
+      .results-list {
+        background: rgba(255,255,255,0.95);
+        max-height: 200px;
+        overflow-y: auto;
+        border-radius: 6px;
+        margin-top: 4px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        display: none;
+      }
+      .result-item { padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+      .result-item:hover { background: #f5f5f5; }
 
-    .filter-container { position: fixed; top: 65px; left: 15px; z-index: 9999; display: flex; gap: 6px; flex-wrap: wrap; max-width: 260px; }
-    .filter-container button { padding: 4px 8px; border-radius: 6px; border: 1px solid #aaa; background: #fff; cursor: pointer; font-size: 12px; font-weight: 600; }
-    .filter-container button:hover { background: #e9e9e9; }
+      .popup-content { color:#000; font-size:13px; line-height:1.4; width: 230px; }
+      .popup-buttons { display:flex; justify-content:space-between; margin-top:8px; gap:4px; }
+      .popup-btn {
+        flex:1; padding:6px 8px; border:none; border-radius:4px; font-size:12px; cursor:pointer;
+        font-weight:600; color:white; transition:transform .15s ease, background .3s;
+      }
+      .popup-btn:hover { transform: scale(1.05); }
+      .btn-dir { background:#1976d2; } .btn-dir:hover { background:#1565c0; }
+      .btn-contact { background:#4caf50; } .btn-contact:hover { background:#449d48; }
 
-    .popup-content { color:#000; font-size:13px; line-height:1.4; width: 230px; }
-    .popup-buttons { display:flex; justify-content:space-between; margin-top:8px; gap:4px; }
-    .popup-btn { flex:1; padding:6px 8px; border:none; border-radius:4px; font-size:12px; cursor:pointer; font-weight:600; color:white; }
-    .btn-dir { background:#1976d2; }
-    .btn-contact { background:#4caf50; }
-  </style>
-</head>
+      .google-btn {
+        display:inline-block; margin-top:6px; background:#1a73e8; color:#fff!important;
+        padding:5px 8px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px;
+      }
+      .google-btn:hover { background:#1669c1; }
 
-<body>
-  <div id="map"></div>
+      #splash-screen {
+        position: fixed; top:0; left:0; width:100%; height:100%;
+        background: rgba(0,0,0,0.85);
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        z-index: 10000; transition: opacity 0.8s ease; backdrop-filter: blur(4px);
+      }
+      #splash-screen img { width: 160px; margin-bottom: 25px; }
+      #progress { margin-top: 8px; font-size: 15px; color: #ccc; font-weight: 600; }
+      .progress-bar {
+        width: 250px; height: 10px; background: rgba(255,255,255,0.2);
+        border-radius: 5px; margin-top: 12px; overflow: hidden; box-shadow: inset 0 0 5px rgba(0,0,0,0.25);
+      }
+      .progress-bar-inner { height: 100%; width: 0%; background: #4caf50; transition: width 0.3s ease; }
 
-  <div class="search-container">
-    <input type="text" id="searchInput" placeholder="🔍 Rechercher une agence..." />
-    <div class="results-list" id="resultsList"></div>
-  </div>
+      .dept-tooltip {
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
 
-  <div class="filter-container">
-    <button onclick="filterMarkers('all')">Toutes</button>
-    <button onclick="filterMarkers('integrée')">Intégrées</button>
-    <button onclick="filterMarkers('franchisée')">Franchisées</button>
-    <button onclick="filterMarkers('demeseul')">Demeseuls</button>
-  </div>
+  <body>
+    <div id="map"></div>
 
-  <div class="logo-container">
-    <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Logo Hexvia" />
-  </div>
-
-  <div class="legend">
-    <div class="legend-section">
-      <b>Types d'agences</b><br />
-      <span class="legend-marker" style="background:#2e7d32;"></span> Intégrée<br />
-      <span class="legend-marker" style="background:#1565c0;"></span> Franchisée<br />
-      <span class="legend-marker" style="background:#424242;"></span> Demeseul
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="🔍 Rechercher une agence..." />
+      <div class="results-list" id="resultsList"></div>
     </div>
-    <div class="legend-section">
-      <b>Densité par département</b><br />
-      <div class="legend-gradient">
-        <span style="font-size:11px;">0</span>
+
+    <div class="logo-container">
+      <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Logo Hexvia" />
+    </div>
+
+    <div class="legend">
+      <div class="legend-section">
+        <b>Types d'agences</b><br />
+        <span class="legend-marker" style="background:#2e7d32;"></span> Intégrée<br />
+        <span class="legend-marker" style="background:#1565c0;"></span> Franchisée<br />
+        <span class="legend-marker" style="background:#424242;"></span> Demeseul
+      </div>
+      <div class="legend-section">
+        <b>Densité par département</b><br />
         <div class="gradient-bar"></div>
-        <span style="font-size:11px;">Max</span>
       </div>
     </div>
-  </div>
 
-  <script>
+    <div id="splash-screen">
+      <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Hexvia" />
+      <p style="color:#fff;margin:0 0 8px;">Chargement des départements et agences...</p>
+      <div id="progress">0%</div>
+      <div class="progress-bar"><div class="progress-bar-inner" id="progressBarInner"></div></div>
+    </div>
 
-    const REVIEWS_CSV_URL = "https://raw.githubusercontent.com/directiondigitaldemecogroup-spec/StreamLitCarteDemeco/refs/heads/main/Infos%20d%C3%A9taill%C3%A9es.csv";
+    <script>
 
-    async function loadReviews() {
-      try {
-        const res = await fetch(REVIEWS_CSV_URL);
+      /* ----------------- AVIS CSV ----------------- */
+      const AVIS_URL =
+        "https://raw.githubusercontent.com/directiondigitaldemecogroup-spec/StreamLitCarteDemeco/refs/heads/main/avis.csv";
+
+      let avisData = {};
+
+      async function loadAvisCSV() {
+        const res = await fetch(AVIS_URL);
         const text = await res.text();
 
-        const lines = text.split(/
-?
-/).filter(l => l.trim().length > 0);
-        const sep = ";";
-        const headers = lines[0].split(sep).map(h => h.trim());
-
-        const idxAgence      = headers.indexOf("AGENCE");
-        const idxNoteGoogle  = headers.indexOf("NOTE GOOGLE");
-        const idxAvisGoogle  = headers.indexOf("AVIS GOOGLE");
-        const idxNoteAV      = headers.indexOf("NOTE AV");
-        const idxAvisAV      = headers.indexOf("AVIS AV");
-
-        const reviews = {};
+        const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+        const headers = lines[0].split(";");
 
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(sep).map(c => c.trim());
-          const agence = cols[idxAgence];
+          const cols = lines[i].split(";");
 
-          if (!agence) continue;
+          const entry = {};
+          headers.forEach((h, idx) => entry[h.trim()] = cols[idx]?.trim() || "");
 
-          reviews[agence] = {
-            noteGoogle: cols[idxNoteGoogle] || "",
-            avisGoogle: cols[idxAvisGoogle] || "",
-            noteAV:     cols[idxNoteAV]     || "",
-            avisAV:     cols[idxAvisAV]     || ""
-          };
+          // Indexation des avis par nom d'agence EXACT (avec espace)
+          avisData[entry["AGENCE"]] = entry;
         }
 
-        return reviews;
-
-      } catch (e) {
-        console.error("Erreur chargement avis.csv", e);
-        return {};
+        console.log("Avis CSV chargés :", avisData);
       }
-    }
 
-  </script>
+      /* ----------------- SCRIPT ORIGINAL ----------------- */
 
-</body>
-</html>
+      window.addEventListener('load', function () { initMap(); });
+
+      const AIRTABLE_TOKEN = 'patCagDMpXwNLGyQu.ed05d2b62289d165c562eed44a9e04b7f424b708179f288461a499caebe77ac4';
+      const BASE_ID = 'app5DoZKkIuqd6Quo';
+      const TABLE_ID = 'tblcLGQDcypZPFbZA';
+
+      let map;
+      let markers = [];
+      let departmentsLayer = null;
+
+      function initMap() {
+        map = L.map('map').setView([46.5, 2.5], 6);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        initSearch();
+
+        main();
+      }
+
+      function buildIcon(type) {
+        let color = "#2e7d32";
+        if ((type || "").toLowerCase().includes("franchise")) color = "#1565c0";
+        if ((type || "").toLowerCase().includes("demeseul")) color = "#424242";
+
+        return L.divIcon({
+          html: `<div style="width:18px;height:18px;background:${color};border-radius:50%;border:2px solid #fff;"></div>`,
+          className: "",
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+          popupAnchor: [0, -10],
+        });
+      }
+
+      async function fetchAllRecords() {
+        const baseUrl = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
+        let offset = null;
+        const all = [];
+
+        do {
+          const url = new URL(baseUrl);
+          url.searchParams.set("pageSize", "100");
+          if (offset) url.searchParams.set("offset", offset);
+
+          const res = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` } });
+          const data = await res.json();
+
+          (data.records || []).forEach(r => all.push(r));
+          offset = data.offset;
+        } while (offset);
+
+        return all;
+      }
+
+      async function main() {
+
+        await loadAvisCSV(); // ← AJOUT AVIS ICI
+
+        const records = await fetchAllRecords();
+
+        for (const rec of records) {
+          const f = rec.fields || {};
+          const lat = parseFloat(f["Latitude"]);
+          const lng = parseFloat(f["Longitude"]);
+
+          if (isNaN(lat) || isNaN(lng)) continue;
+
+          const name = f["AGENCE "] || f["AGENCE"] || "Sans nom";
+
+          /* ----------------- INTÉGRATION AVIS ----------------- */
+          const avis = avisData[name] || {};
+
+          const noteGoogle = avis["NOTE GOOGLE"] || "";
+          const nbGoogle = avis["AVIS GOOGLE"] || "";
+
+          const noteAV = avis["NOTE AV"] || "";
+          const nbAV = avis["AVIS AV"] || "";
+
+          let avisHTML = "";
+
+          if (noteGoogle)
+            avisHTML += `<div>⭐ Google : <b>${noteGoogle}</b> (${nbGoogle} avis)</div>`;
+
+          if (noteAV)
+            avisHTML += `<div>💬 Avis Vérifiés : <b>${noteAV}</b> (${nbAV} avis)</div>`;
+          /* ----------------------------------------------------- */
+
+          const popupHTML = `
+            <div class="popup-content">
+              <strong style="font-size:14px;">${name}</strong><br>
+              🏢 <em>${f["TYPE 2"] || f["TYPE AGENCE"]}</em><br>
+              📍 ${f["ADRESSE-OK"] || ""}<br><br>
+
+              ${avisHTML}
+
+              <div class="popup-buttons">
+                <button class="popup-btn btn-dir"
+                  onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}'
