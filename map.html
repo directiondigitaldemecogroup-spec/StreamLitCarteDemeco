@@ -29,6 +29,25 @@
       }
       .logo-container img { height: 60px; background:white; padding:6px; border-radius:8px; }
 
+      /* FILTRE AGENCES */
+      .filter-container {
+        position: fixed;
+        top: 95px;
+        right: 15px;
+        background: rgba(255,255,255,0.95);
+        padding: 10px 12px;
+        border-radius: 8px;
+        box-shadow: 0 0 8px rgba(0,0,0,0.25);
+        z-index: 9999;
+      }
+      .filter-container select {
+        padding: 6px 8px;
+        font-size: 14px;
+        border-radius: 6px;
+        border: 1px solid #aaa;
+        width: 180px;
+      }
+
       /* LEGENDE MODERNE */
       .legend {
         position: fixed;
@@ -148,8 +167,10 @@
   </head>
 
   <body>
+
     <div id="map"></div>
 
+    <!-- BARRE DE RECHERCHE -->
     <div class="search-container">
       <input type="text" id="searchInput" placeholder="🔍 Rechercher une agence..." />
       <div class="results-list" id="resultsList"></div>
@@ -158,6 +179,16 @@
     <!-- LOGO HEXVIA -->
     <div class="logo-container">
       <img src="https://i.ibb.co/35w511m5/logo-hexvia.png" alt="Logo Hexvia" />
+    </div>
+
+    <!-- FILTRE -->
+    <div class="filter-container">
+      <select id="filterType">
+        <option value="all">📍 Toutes les agences</option>
+        <option value="integrée">🟢 Intégrées</option>
+        <option value="franchisée">🔵 Franchisées</option>
+        <option value="demeseul">⚫ Demeseul</option>
+      </select>
     </div>
 
     <!-- LEGENDE -->
@@ -191,9 +222,9 @@
         initMap();
       });
 
-      const AIRTABLE_TOKEN = 'patCagDMpXwNLGyQu.ed05d2b62289d165c562eed44a9e04b7f424b708179f288461a499caebe77ac4';
-      const BASE_ID = 'app5DoZKkIuqd6Quo';
-      const TABLE_ID = 'tblcLGQDcypZPFbZA';
+      const AIRTABLE_TOKEN = "TA_CLE_AIRTABLE_ICI";   /* ⚠️ Remets ta clé ici */
+      const BASE_ID = "app5DoZKkIuqd6Quo";
+      const TABLE_ID = "tblcLGQDcypZPFbZA";
 
       let map;
       let markers = [];
@@ -210,26 +241,15 @@
         main();
       }
 
-      /* ---- BUILD ICON (CORRIGÉ) ---- */
       function buildIcon(type, googleNote) {
         let t = (type || '').toLowerCase().trim();
 
-        console.log('Type reçu:', type, '| Après traitement:', t);
-
-        let color = "#2e7d32"; // intégrée par défaut
+        let color = "#2e7d32";
 
         const typeNormalized = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        console.log('Type normalisé (sans accents):', typeNormalized);
 
-        if (typeNormalized.includes("franchise")) {
-          color = "#1565c0";
-          console.log('→ Couleur BLEUE (Franchisée)');
-        } else if (typeNormalized.includes("demeseul")) {
-          color = "#424242";
-          console.log('→ Couleur GRISE (Demeseul)');
-        } else {
-          console.log('→ Couleur VERTE (Intégrée)');
-        }
+        if (typeNormalized.includes("franchise")) color = "#1565c0";
+        else if (typeNormalized.includes("demeseul")) color = "#424242";
 
         const halo = googleNote ? "box-shadow:0 0 8px rgba(255,215,0,0.9);" : "";
 
@@ -242,7 +262,34 @@
         });
       }
 
-      /* Airtable */
+      /* FILTRE */
+      function applyFilter() {
+        const value = document.getElementById("filterType").value.toLowerCase();
+
+        markers.forEach(m => {
+          const t1 = (m.type || "").toLowerCase();
+          const t2 = (m.type2 || "").toLowerCase();
+
+          const matchIntegrée  = t1.includes("int")      || t2.includes("int");
+          const matchFranchise = t1.includes("franch")   || t2.includes("franch");
+          const matchDemeseul  = t1.includes("demeseul") || t2.includes("demeseul");
+
+          let show = false;
+
+          if (value === "all") show = true;
+          else if (value === "integrée"  && matchIntegrée)  show = true;
+          else if (value === "franchisée" && matchFranchise) show = true;
+          else if (value === "demeseul"   && matchDemeseul)  show = true;
+
+          if (show) {
+            if (!map.hasLayer(m.marker)) map.addLayer(m.marker);
+          } else {
+            if (map.hasLayer(m.marker)) map.removeLayer(m.marker);
+          }
+        });
+      }
+
+      /* Airtable fetch */
       async function fetchAllRecords() {
         const baseUrl = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
         let offset = null;
@@ -268,14 +315,12 @@
           const response = await fetch('https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson');
           return await response.json();
         } catch (error) {
-          console.error('Erreur lors du chargement des départements:', error);
+          console.error('Erreur loading départements:', error);
           return null;
         }
       }
 
       function findDepartment(lat, lng, geojson) {
-        if (!geojson) return null;
-
         const point = [lng, lat];
 
         for (const feature of geojson.features) {
@@ -302,10 +347,12 @@
       function pointInPoly(point, vs) {
         const x = point[0], y = point[1];
         let inside = false;
+
         for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
           const xi = vs[i][0], yi = vs[i][1];
           const xj = vs[j][0], yj = vs[j][1];
-          const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+          const intersect = ((yi > y) !== (yj > y))
+                         && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
           if (intersect) inside = !inside;
         }
         return inside;
@@ -313,9 +360,7 @@
 
       function getColorForCount(count, maxCount) {
         if (count === 0) return '#f5f5f5';
-
         const ratio = count / maxCount;
-
         if (ratio < 0.2) return '#e8f5e9';
         if (ratio < 0.4) return '#a5d6a7';
         if (ratio < 0.6) return '#66bb6a';
@@ -323,6 +368,7 @@
         return '#2e7d32';
       }
 
+      /* MAIN */
       async function main() {
         const splash = document.getElementById('splash-screen');
         const progress = document.getElementById('progress');
@@ -331,11 +377,6 @@
         progress.textContent = "Chargement des départements...";
         const geojson = await loadDepartmentsGeoJSON();
         bar.style.width = "30%";
-
-        if (!geojson) {
-          alert("Impossible de charger les départements français");
-          return;
-        }
 
         progress.textContent = "Chargement des agences...";
         const records = await fetchAllRecords();
@@ -348,13 +389,10 @@
           const f = rec.fields || {};
           const lat = parseFloat(f["Latitude"]);
           const lng = parseFloat(f["Longitude"]);
-
           if (isNaN(lat) || isNaN(lng)) continue;
 
           const dept = findDepartment(lat, lng, geojson);
-          if (dept) {
-            deptCount[dept] = (deptCount[dept] || 0) + 1;
-          }
+          if (dept) deptCount[dept] = (deptCount[dept] || 0) + 1;
 
           agenciesData.push({
             lat, lng,
@@ -389,27 +427,17 @@
             const count = deptCount[code] || 0;
 
             layer.bindTooltip(
-              `<div class="dept-tooltip"><b>${nom} (${code})</b><br>${count} agence${count !== 1 ? 's' : ''}</div>`,
-              { permanent: false, direction: 'center', className: 'dept-tooltip' }
+              `<div class="dept-tooltip"><b>${nom} (${code})</b><br>${count} agence${count !== 1 ? 's' : ''}</div>`
             );
 
             layer.on({
-              mouseover: function(e) {
-                const l = e.target;
-                l.setStyle({
-                  weight: 3,
-                  fillOpacity: 0.8
-                });
-              },
-              mouseout: function(e) {
-                departmentsLayer.resetStyle(e.target);
-              }
+              mouseover: e => e.target.setStyle({ weight: 3, fillOpacity: 0.8 }),
+              mouseout: e => departmentsLayer.resetStyle(e.target)
             });
           }
         }).addTo(map);
 
         bar.style.width = "80%";
-
         progress.textContent = "Ajout des agences...";
 
         let done = 0;
@@ -429,11 +457,8 @@
               <strong style="font-size:14px;">${name}</strong><br>
               🏢 <em>${type2 || type}</em><br>
               📍 ${address}<br>
-
               ${googleNote ? `<div style="${noteStyle}">⭐ ${googleNote}/5</div>` : ``}
-
               ${googleAvis ? `<a href="${googleAvis}" class="google-btn" target="_blank">Voir les avis</a>` : ``}
-
               <div class="popup-buttons">
                 <button class="popup-btn btn-dir" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}', '_blank')">Itinéraire</button>
                 <button class="popup-btn btn-contact">Contact</button>
@@ -450,17 +475,20 @@
           markers.push({ name, type, type2, marker });
 
           done++;
-          const pct = 80 + Math.round((done / agenciesData.length) * 20);
-          bar.style.width = pct + "%";
+          bar.style.width = 80 + Math.round((done / agenciesData.length) * 20) + "%";
         }
 
         progress.textContent = "100%";
         bar.style.width = "100%";
 
+        /* Activation filtre */
+        document.getElementById("filterType").addEventListener("change", applyFilter);
+
         setTimeout(() => splash.style.opacity = 0, 500);
         setTimeout(() => splash.remove(), 1200);
       }
 
+      /* Recherche */
       function initSearch() {
         const searchInput = document.getElementById("searchInput");
         const resultsList = document.getElementById("resultsList");
@@ -497,5 +525,7 @@
         });
       }
     </script>
+
   </body>
 </html>
+
