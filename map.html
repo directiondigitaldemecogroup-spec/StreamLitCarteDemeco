@@ -140,7 +140,6 @@
 
     </style>
   </head>
-
   <body>
     <div id="map"></div>
 
@@ -362,12 +361,10 @@
             address: f["ADRESSE-OK"] || "",
             type: f["TYPE AGENCE"] || "",
             type2: f["TYPE 2"] || "",
+            type3: f["TYPE 3"] || "",
             googleAvis: f["URL Avis Google"] || null,
-
-            // 🎯 100% Airtable
             googleNote: f["NOTE_GOOGLE"] || null,
             googleCount: f["NOMBRE_AVIS_GOOGLE"] || null,
-
             avNote: f["NOTE_AV"] || null,
             avCount: f["NOMBRE_AVIS_AV"] || null
           });
@@ -399,7 +396,7 @@
           const {
             lat, lng,
             name, address,
-            type, type2,
+            type, type2, type3,
             googleAvis,
             googleNote,
             googleCount,
@@ -446,12 +443,43 @@
           .addTo(map)
           .bindPopup(popupHTML);
 
-          markers.push({ name, type, type2, marker });
+          markers.push({ name, type, type2, type3, marker });
 
           done++;
           const pct = 80 + Math.round((done / agenciesData.length) * 20);
           bar.style.width = pct + "%";
         }
+
+        /* ---------------------------------------------------
+           🎯 AJOUT AUTOMATIQUE FILTRES TRI & TRA (Option 1)
+           --------------------------------------------------- */
+
+        let triAdded = false;
+        let traAdded = false;
+
+        markers.forEach(m => {
+          if (!m.type3) return;
+          const t3 = m.type3.toLowerCase();
+
+          if (t3.includes("tri") && !triAdded) {
+            const opt = document.createElement("option");
+            opt.value = "tri";
+            opt.textContent = "🚧 TRI";
+            document.getElementById("filterType").appendChild(opt);
+            triAdded = true;
+          }
+
+          if (t3.includes("tra") && !traAdded) {
+            const opt = document.createElement("option");
+            opt.value = "tra";
+            opt.textContent = "🚚 TRA";
+            document.getElementById("filterType").appendChild(opt);
+            traAdded = true;
+          }
+        });
+
+        /* --------------------------------------------------- */
+
 
         document.getElementById("filterType").addEventListener("change", applyFilter);
 
@@ -467,10 +495,17 @@
 
         markers.forEach(m => {
           const t = detectType(m.type, m.type2);
-
           let show = false;
+
           if (value === "all") show = true;
           else if (t === value) show = true;
+
+          // 🎯 FILTRE SUR TYPE 3 → TRI / TRA
+          if (m.type3) {
+            const t3 = m.type3.toLowerCase();
+            if (value === "tri" && t3.includes("tri")) show = true;
+            if (value === "tra" && t3.includes("tra")) show = true;
+          }
 
           if (show) map.addLayer(m.marker);
           else map.removeLayer(m.marker);
@@ -489,7 +524,8 @@
           const filtered = markers.filter(m =>
             m.name.toLowerCase().includes(q) ||
             m.type.toLowerCase().includes(q) ||
-            (m.type2 && m.type2.toLowerCase().includes(q))
+            (m.type2 && m.type2.toLowerCase().includes(q)) ||
+            (m.type3 && m.type3.toLowerCase().includes(q))
           );
 
           if (filtered.length === 0) {
