@@ -366,7 +366,16 @@
             googleNote: f["NOTE_GOOGLE"] || null,
             googleCount: f["NOMBRE_AVIS_GOOGLE"] || null,
             avNote: f["NOTE_AV"] || null,
-            avCount: f["NOMBRE_AVIS_AV"] || null
+            avCount: f["NOMBRE_AVIS_AV"] || null,
+
+            /* CHAMPS EXPLOITATION */
+            EXPLOITANT: f["EXPLOITANT"] || "",
+            MAIL_EXPLOITANT: f["MAIL_EXPLOITANT"] || "",
+            NUMERO_EXPLOITANT: f["NUMERO_EXPLOITANT"] || "",
+
+            /* CHAMPS DIRECTION */
+            DIRECTION_MAIL: f["DIRECTION D'AGENCE"] || "",
+            NUMERO_DIRECTION: f["NUMERO DEMECO.FR"] || ""
           });
         }
 
@@ -401,7 +410,12 @@
             googleNote,
             googleCount,
             avNote,
-            avCount
+            avCount,
+            EXPLOITANT,
+            MAIL_EXPLOITANT,
+            NUMERO_EXPLOITANT,
+            DIRECTION_MAIL,
+            NUMERO_DIRECTION
           } = agency;
 
           let noteStyle = "";
@@ -422,6 +436,41 @@
             ? `<div style="color:#1565c0;font-weight:bold;">🏆 AV : ${avNote}/5${avCount ? ` (${avCount} avis)` : ""}</div>`
             : "";
 
+          const hasExploitation =
+            (EXPLOITANT && EXPLOITANT.trim() !== "") ||
+            (MAIL_EXPLOITANT && MAIL_EXPLOITANT.trim() !== "") ||
+            (NUMERO_EXPLOITANT && NUMERO_EXPLOITANT.trim() !== "");
+
+          const exploitationBlock = hasExploitation ? `
+            <div class="exploitation-details" style="display:none;margin-top:8px;font-size:12px;">
+              <b>Responsable Exploitation :</b> ${EXPLOITANT || "Non renseigné"}<br>
+              <b>Mail :</b> ${MAIL_EXPLOITANT || "Non renseigné"}<br>
+              <b>N° :</b> ${NUMERO_EXPLOITANT || "Non renseigné"}
+            </div>
+          ` : "";
+
+          const hasDirection =
+            (DIRECTION_MAIL && DIRECTION_MAIL.trim() !== "") ||
+            (NUMERO_DIRECTION && NUMERO_DIRECTION.trim() !== "");
+
+          const directionName = getDirectionName(DIRECTION_MAIL);
+
+          const directionBlock = hasDirection ? `
+            <div class="direction-details" style="display:none;margin-top:8px;font-size:12px;">
+              <b>Direction :</b> ${directionName}<br>
+              <b>Mail :</b> ${DIRECTION_MAIL || "Non renseigné"}<br>
+              <b>N° :</b> ${NUMERO_DIRECTION || "Non renseigné"}
+            </div>
+          ` : "";
+
+          const directionButtonHTML = hasDirection
+            ? `<button class="popup-btn btn-dir" onclick="toggleDirection(this)">Direction</button>`
+            : "";
+
+          const exploitationButtonHTML = hasExploitation
+            ? `<button class="popup-btn btn-contact" onclick="toggleExploitation(this)">Exploitation</button>`
+            : "";
+
           const popupHTML = `
             <div class="popup-content">
               <strong style="font-size:14px;">${name}</strong><br>
@@ -430,10 +479,14 @@
               ${googleBlock}
               ${avBlock}
               ${googleAvis ? `<a href="${googleAvis}" class="google-btn" target="_blank">Voir les avis Google</a>` : ``}
+
               <div class="popup-buttons">
-                <button class="popup-btn btn-dir" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}', '_blank')">Itinéraire</button>
-                <button class="popup-btn btn-contact">Contact</button>
+                ${directionButtonHTML}
+                ${exploitationButtonHTML}
               </div>
+
+              ${directionBlock}
+              ${exploitationBlock}
             </div>
           `;
 
@@ -449,10 +502,6 @@
           const pct = 80 + Math.round((done / agenciesData.length) * 20);
           bar.style.width = pct + "%";
         }
-
-        /* ---------------------------------------------------
-           🎯 AJOUT AUTOMATIQUE FILTRES TRI & TRA (Option 1)
-           --------------------------------------------------- */
 
         let triAdded = false;
         let traAdded = false;
@@ -478,9 +527,6 @@
           }
         });
 
-        /* --------------------------------------------------- */
-
-
         document.getElementById("filterType").addEventListener("change", applyFilter);
 
         progress.textContent = "100%";
@@ -500,7 +546,6 @@
           if (value === "all") show = true;
           else if (t === value) show = true;
 
-          // 🎯 FILTRE SUR TYPE 3 → TRI / TRA
           if (m.type3) {
             const t3 = m.type3.toLowerCase();
             if (value === "tri" && t3.includes("tri")) show = true;
@@ -547,6 +592,38 @@
 
           resultsList.style.display = "block";
         });
+      }
+
+      function getDirectionName(mail) {
+        if (!mail || !mail.includes("@") || !mail.includes(".")) return "Non renseigné";
+        const beforeAt = mail.split("@")[0]; // nom.prenom
+        const parts = beforeAt.split(".");
+        if (parts.length < 2) return "Non renseigné";
+
+        const nom = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const prenom = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
+
+        return `${prenom} ${nom}`;
+      }
+
+      function toggleExploitation(btn) {
+        const container = btn.closest('.popup-content').querySelector('.exploitation-details');
+        if (!container) return;
+
+        const isVisible = container.style.display === "block";
+        container.style.display = isVisible ? "none" : "block";
+
+        btn.textContent = isVisible ? "Exploitation" : "Masquer";
+      }
+
+      function toggleDirection(btn) {
+        const container = btn.closest('.popup-content').querySelector('.direction-details');
+        if (!container) return;
+
+        const isVisible = container.style.display === "block";
+        container.style.display = isVisible ? "none" : "block";
+
+        btn.textContent = isVisible ? "Direction" : "Masquer";
       }
     </script>
   </body>
