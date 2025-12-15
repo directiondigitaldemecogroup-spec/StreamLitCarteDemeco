@@ -28,4 +28,20 @@ document.getElementById("search").addEventListener("input", e => {
     agencies.filter(a => a.name.toLowerCase().includes(q))
   );
 });
+const dashboardFrame = document.querySelector(
+  'iframe[src="dashboard/dashboard.html"]'
+);
+
+if (dashboardFrame) {
+  dashboardFrame.contentWindow.postMessage({
+    type: "AGENCIES_DATA",
+    payload: agenciesData.map(a => ({
+      name: a.name,
+      googleNote: a.googleNote,
+      googleCount: a.googleCount,
+      lat: a.lat,
+      lng: a.lng
+    }))
+  }, "*");
+}
 
