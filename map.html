@@ -374,8 +374,9 @@
             NUMERO_EXPLOITANT: f["NUMERO_EXPLOITANT"] || "",
 
             /* CHAMPS DIRECTION */
-            DIRECTION_MAIL: f["DIRECTION D'AGENCE"] || "",
-            NUMERO_DIRECTION: f["NUMERO DEMECO.FR"] || ""
+            DIRECTION_MAIL: f["mail_direction"] || "",
+            NUMERO_DIRECTION: f["NUMERO DEMECO.FR"] || "",
+            Direction: f["Direction"] || ""
           });
         }
 
@@ -415,7 +416,8 @@
             MAIL_EXPLOITANT,
             NUMERO_EXPLOITANT,
             DIRECTION_MAIL,
-            NUMERO_DIRECTION
+            NUMERO_DIRECTION,
+            Direction
           } = agency;
 
           let noteStyle = "";
@@ -453,7 +455,7 @@
             (DIRECTION_MAIL && DIRECTION_MAIL.trim() !== "") ||
             (NUMERO_DIRECTION && NUMERO_DIRECTION.trim() !== "");
 
-          const directionName = getDirectionName(DIRECTION_MAIL);
+          const directionName = getDirectionName(Direction);
 
           const directionBlock = hasDirection ? `
             <div class="direction-details" style="display:none;margin-top:8px;font-size:12px;">
@@ -594,16 +596,9 @@
         });
       }
 
-      function getDirectionName(mail) {
-        if (!mail || !mail.includes("@") || !mail.includes(".")) return "Non renseigné";
-        const beforeAt = mail.split("@")[0]; // nom.prenom
-        const parts = beforeAt.split(".");
-        if (parts.length < 2) return "Non renseigné";
-
-        const nom = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-        const prenom = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
-
-        return `${prenom} ${nom}`;
+      function getDirectionName(direction) {
+        if (!direction || direction.trim() === "") return "Non renseigné";
+        return direction;
       }
 
       function toggleExploitation(btn) {
