@@ -327,6 +327,37 @@
         return '#2e7d32';
       }
 
+      // ✅ Récupération robuste de la valeur STATUT (nom exact/casse/espaces)
+      function getStatutValue(fields) {
+        const candidates = ["STATUT", "STATUT ", "Statut", "statut", "Status", "STATUS"];
+        for (const k of candidates) {
+          if (Object.prototype.hasOwnProperty.call(fields, k)) return fields[k];
+        }
+        return undefined;
+      }
+
+      // ✅ Interprétation robuste de "coché = inactive"
+      function isInactive(statutVal) {
+        if (statutVal === true) return true;            // checkbox
+        if (Array.isArray(statutVal)) return statutVal.length > 0; // multi-select / linked etc.
+        if (typeof statutVal === "number") return statutVal === 1;
+
+        if (typeof statutVal === "string") {
+          const s = statutVal.trim().toLowerCase();
+          if (
+            s === "true" ||
+            s === "1" ||
+            s === "yes" ||
+            s === "oui" ||
+            s === "x" ||
+            s === "✅" ||
+            s.includes("inactif") ||
+            s.includes("inactive")
+          ) return true;
+        }
+        return false;
+      }
+
       async function main() {
         const splash = document.getElementById('splash-screen');
         const progress = document.getElementById('progress');
@@ -340,18 +371,21 @@
         const records = await fetchAllRecords();
         bar.style.width = "60%";
 
+        // 🛠 Debug utile si besoin (décommente pour vérifier le nom du champ)
+        // console.log("Exemple champs record 0 :", records?.[0]?.fields);
+
         const deptCount = {};
         const agenciesData = [];
 
-        // ✅ Ici on filtre totalement les agences inactives (STATUT coché)
+        // ✅ On filtre dès la source : n'apparait pas, ne compte pas, pas dans la recherche
         for (const rec of records) {
           const f = rec.fields || {};
           const lat = parseFloat(f["Latitude"]);
           const lng = parseFloat(f["Longitude"]);
           if (isNaN(lat) || isNaN(lng)) continue;
 
-          const isInactive = f["STATUT"] === true; // ✅ checkbox Airtable
-          if (isInactive) continue; // ✅ n'apparait pas, ne compte pas
+          const statutVal = getStatutValue(f);
+          if (isInactive(statutVal)) continue; // ✅ cochée => inactive => exclue
 
           const dept = findDepartment(lat, lng, geojson);
           if (dept) deptCount[dept] = (deptCount[dept] || 0) + 1;
@@ -366,7 +400,6 @@
             type: f["TYPE AGENCE"] || "",
             type2: f["TYPE 2"] || "",
             type3: f["TYPE 3"] || "",
-            statut: false, // ici forcément active car filtrée au-dessus
 
             googleAvis: f["URL Avis Google"] || null,
             googleNote: f["NOTE_GOOGLE"] || null,
