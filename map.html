@@ -137,9 +137,9 @@
         border-radius: 5px; margin-top: 12px; overflow: hidden; box-shadow: inset 0 0 5px rgba(0,0,0,0.25);
       }
       .progress-bar-inner { height: 100%; width: 0%; background: #4caf50; transition: width 0.3s ease; }
-
     </style>
   </head>
+
   <body>
     <div id="map"></div>
 
@@ -193,6 +193,9 @@
       const AIRTABLE_TOKEN = 'patCagDMpXwNLGyQu.ed05d2b62289d165c562eed44a9e04b7f424b708179f288461a499caebe77ac4';
       const BASE_ID = 'app5DoZKkIuqd6Quo';
       const TABLE_ID = 'tblcLGQDcypZPFbZA';
+
+      // ✅ Champ Airtable 0/1 : 0 = inactive, 1 = active
+      const STATUS_FIELD = "STATUT";
 
       let map;
       let markers = [];
@@ -327,35 +330,28 @@
         return '#2e7d32';
       }
 
-      // ✅ Récupération robuste de la valeur STATUT (nom exact/casse/espaces)
-      function getStatutValue(fields) {
-        const candidates = ["STATUT", "STATUT ", "Statut", "statut", "Status", "STATUS"];
-        for (const k of candidates) {
-          if (Object.prototype.hasOwnProperty.call(fields, k)) return fields[k];
-        }
-        return undefined;
+      // ✅ Convertit STATUT vers 0/1 de manière robuste
+      function toActive01(val) {
+        if (val === 1 || val === "1") return 1;
+        if (val === 0 || val === "0") return 0;
+
+        const s = String(val ?? "").trim();
+        if (s === "") return 0;
+
+        const n = Number(s);
+        if (!Number.isNaN(n)) return n >= 1 ? 1 : 0;
+
+        // fallback si jamais tu mets "active"/"inactive"
+        const low = s.toLowerCase();
+        if (low.includes("active")) return 1;
+        if (low.includes("inact")) return 0;
+
+        return 0;
       }
 
-      // ✅ Interprétation robuste de "coché = inactive"
-      function isInactive(statutVal) {
-        if (statutVal === true) return true;            // checkbox
-        if (Array.isArray(statutVal)) return statutVal.length > 0; // multi-select / linked etc.
-        if (typeof statutVal === "number") return statutVal === 1;
-
-        if (typeof statutVal === "string") {
-          const s = statutVal.trim().toLowerCase();
-          if (
-            s === "true" ||
-            s === "1" ||
-            s === "yes" ||
-            s === "oui" ||
-            s === "x" ||
-            s === "✅" ||
-            s.includes("inactif") ||
-            s.includes("inactive")
-          ) return true;
-        }
-        return false;
+      function isInactiveBy01(fields) {
+        const raw = fields?.[STATUS_FIELD];
+        return toActive01(raw) !== 1; // actif uniquement si == 1
       }
 
       async function main() {
@@ -371,21 +367,17 @@
         const records = await fetchAllRecords();
         bar.style.width = "60%";
 
-        // 🛠 Debug utile si besoin (décommente pour vérifier le nom du champ)
-        // console.log("Exemple champs record 0 :", records?.[0]?.fields);
-
         const deptCount = {};
         const agenciesData = [];
 
-        // ✅ On filtre dès la source : n'apparait pas, ne compte pas, pas dans la recherche
+        // ✅ Filtrage dès la source : STATUT=0 => exclu partout
         for (const rec of records) {
           const f = rec.fields || {};
           const lat = parseFloat(f["Latitude"]);
           const lng = parseFloat(f["Longitude"]);
           if (isNaN(lat) || isNaN(lng)) continue;
 
-          const statutVal = getStatutValue(f);
-          if (isInactive(statutVal)) continue; // ✅ cochée => inactive => exclue
+          if (isInactiveBy01(f)) continue; // ✅ 0 => inactive
 
           const dept = findDepartment(lat, lng, geojson);
           if (dept) deptCount[dept] = (deptCount[dept] || 0) + 1;
@@ -437,7 +429,6 @@
         }).addTo(map);
 
         bar.style.width = "80%";
-
         progress.textContent = "Ajout des agences...";
 
         let done = 0;
